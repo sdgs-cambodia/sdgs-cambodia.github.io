@@ -1,1 +1,1 @@
-# sdgs-cambodia.github.io
+# sustainabledevelopment-cambodia.github.io
