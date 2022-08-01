@@ -1,0 +1,1625 @@
+<!DOCTYPE html>
+<html lang="km" class="no-js">
+    <head>
+        <meta charset="utf-8">
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/modernizr/2.8.3/modernizr.min.js"></script>
+        <script crossorigin="anonymous" src="https://polyfill.io/v3/polyfill.min.js?features=Promise%2CArray.prototype.forEach%2CString.prototype.includes%2CURLSearchParams%2CCustomEvent%2CArray.prototype.includes%2CArray.prototype.filter%2CArray.prototype.some%2CArray.prototype.find%2CArray.prototype.reduce%2CObject.assign%2CArray.isArray%2CObject.values%2CObject.entries%2CArray.from%2CSet%2CArray.prototype.findIndex"></script>
+<script crossorigin="anonymous" src="https://cdnjs.cloudflare.com/ajax/libs/javascript-canvas-to-blob/3.15.0/js/canvas-to-blob.min.js"></script>
+
+        <script>
+// This is where we initialise any global variables, namespaced in "opensdg".
+var opensdg = {
+
+  // A base URL for asynchronous calls to SDG data.
+  remoteDataBaseUrl: 'https://sustainabledevelopment-cambodia.github.io/prod-data/km',
+
+  chartConfigAlterations: [],
+  // A hook which can be used to modify the configuration for Chart.js.
+  chartConfigAlter: function(callback) {
+    this.chartConfigAlterations.push(callback);
+  },
+
+  tableConfigAlterations: [],
+  // A hook which can be used to modify the configuration for Datatables.
+  tableConfigAlter: function(callback) {
+    this.tableConfigAlterations.push(callback);
+  },
+
+  // A hook which can be replaced to alter whether/how the values that are
+  // displayed on indicator tables/graphs get rounded.
+  dataRounding: function(value) {
+    // Alterations go here.
+    return value;
+  },
+
+  // A hook which can be used to alter the data before it is displayed on charts/tables.
+  dataDisplayAlterations: [],
+  dataDisplayAlter: function(callback) {
+    this.dataDisplayAlterations.push(callback);
+  },
+
+  language: 'km',
+};
+
+// For backwards compatibility, some of these might need to be global.
+// @TODO: Remove these eventually.
+var remoteDataBaseUrl = opensdg.remoteDataBaseUrl;
+
+</script>
+
+        <script>
+// JavaScript container for translation data.
+var translations = {
+  //Javascript version of the "t" filter from jekyll-open-sdg-plugins.
+  t: function(key) {
+
+    if (!key || typeof key !== 'string') {
+      return '';
+    }
+
+    // The majority of uses of this function are to translate disaggregation
+    // data. To spare data providers of needing to enter "data." in front of
+    // their disaggregation data, we specifically look for that here.
+    if (typeof this.data === 'object' && this.data !== null && this.data[key]) {
+      return this.data[key];
+    }
+
+    var originalKey = key;
+    var drilled = this;
+    var levelsDrilled = 0;
+    var levels = key.split('.');
+
+    for (var level in levels) {
+      // If we have drilled down to soon, abort.
+      if (typeof drilled !== 'object') {
+        break;
+      }
+
+      if (levels[level] in drilled) {
+        drilled = drilled[levels[level]];
+        levelsDrilled += 1;
+      }
+    }
+
+    // If we didn't drill the right number of levels, return the original string.
+    if (levels.length != levelsDrilled) {
+      return originalKey;
+    }
+
+    // Otherwise we must have drilled all the way.
+    return drilled;
+  },
+};
+</script>
+
+        <!-- Basic Page Needs
+        ================================================== -->
+        <meta http-equiv="X-UA-Compatible" content="IE=edge"><!-- Mobile Specific Metas
+        ================================================== -->
+        <meta name="HandheldFriendly" content="True">
+        <meta name="MobileOptimized" content="320">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <!-- Title and meta description
+        ================================================== -->
+
+        
+    <title>
+        
+        សូចនាករ 1.a.2 -
+        
+        សមាមាត្រនៃការចំណាយសរុបរបស់រដ្ឋាភិបាលទៅលើសេវាកម្មចាំបាច់ (ការអប់រំសុខភាពនិងការគាំពារសង្គម) - Indicators For The Sustainable Development Goals
+    </title>
+
+
+
+        <meta name="description" content="">
+        <meta property="og:description" content="">
+        
+        <link rel="canonical" href="/">
+
+        <!--[if IE 9]>
+        <script src="/assets/js/lib/classList.js"></script>
+        <![endif]-->
+
+        
+
+
+
+
+<link rel="shortcut icon" type="image/ico" href="/assets/img/favicons/favicon.ico">
+<link rel="icon" type="image/png" href="/assets/img/favicons/favicon.png">
+
+
+        
+        
+        <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css" crossorigin="">
+        
+        <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css" crossorigin="">
+        <link rel="stylesheet" href="https://cdn.datatables.net/fixedcolumns/3.2.3/css/fixedColumns.dataTables.min.css" crossorigin="">
+        <link rel="stylesheet" href="/assets/css/style.css?v=20220801012725">
+        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.3.4/dist/leaflet.css"
+          integrity="sha512-puBpdR0798OZvTTbP4A8Ix/l+A4dHDD0DGqYW6RQ+9jxkRFclaxxQb/SJAWZfWAkuyeQUytO7+7N4QKrDh+drA=="
+          crossorigin=""/>
+        <link rel="stylesheet" href="https://cdn.rawgit.com/socib/Leaflet.TimeDimension/master/dist/leaflet.timedimension.control.min.css"  crossorigin=""/>
+        <link rel="stylesheet" href='https://api.mapbox.com/mapbox.js/plugins/leaflet-fullscreen/v1.0.1/leaflet.fullscreen.css'  crossorigin=""/>
+        <link rel="stylesheet" href="https://bowercdn.net/c/leaflet.zoomhome-latest/dist/leaflet.zoomhome.css"  crossorigin=""/>
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet-search@2.9.7/dist/leaflet-search.min.css" crossorigin="">
+        <link rel="stylesheet" href="https://cdn.kiprotect.com/klaro/v0.7/klaro.min.css" crossorigin=""/>
+        
+
+        <link rel="preconnect" href="https://fonts.gstatic.com">
+<link href="https://fonts.googleapis.com/css2?family=Khmer&display=swap" rel="stylesheet">
+
+    </head>
+<body class="language-km
+layout-indicator
+">
+<!-- <div class="container"> -->
+
+
+
+<script>translations['header'] = {"alpha":"អាល់ហ្វា","default_contrast":"កម្រិតពណ៌លំនាំដើម","disable_high_contrast":"បិទដំណើរការកម្រិតពណ៌ខ្ពស់","disclaimer":"នេះគឺជាគេហទំព័រអភិវឌ្ឍន៍។ យើងសូមស្វាគមន៍រាល់មតិប្រតិកម្មរបស់អ្នក [៤៧] [៨៧] ។","enable_high_contrast":"បើកដំណើរការកម្រិតពណ៌ខ្ពស់","high_contrast":"កម្រិត​ពណ៌​ខ្ពស់","skip_link":"រំលងទៅមាតិកាមេ","tag_line":"គោលដៅចំនួន ១៧ ដើម្បីបំរែបំរួលពិភពលោករបស់យើង","toggle_menu":"បិទ / បើកម៉ឺនុយ។ ចុចដើម្បីពង្រីកឬបង្រួមម៉ឺនុយ។","toggle_search":"ស្វែងរកបិទ / បើក។ ចុចដើម្បីពង្រីកឬបង្រួមរបារស្វែងរក។"};</script>
+
+<a class="sr-only sr-only-focusable" id="skiplink" href="#main-content" tabindex="0">រំលងទៅមាតិកាមេ</a>
+<div id="disclaimer">
+  
+<div class="container">
+  <div class="disclaimer-alert">
+    <strong class="phase-tag">អាល់ហ្វា</strong>
+    
+    នេះគឺជាគេហទំព័រអភិវឌ្ឍន៍។ យើងសូមស្វាគមន៍រាល់មតិប្រតិកម្មរបស់អ្នក [៤៧] [៨៧] ។
+    
+  </div>
+</div>
+
+</div>
+
+<header role="banner" class="header-menu-left-aligned">
+  <div class="container">
+
+    <div class="logo-and-mobile-widgets">
+      <a class="navbar-brand" href="/" id="home">
+    <img src="/assets/img/km-logo.png" alt="ព្រះរាជាណាចក្រកម្ពុជា ក្រសួងផែនការ វិទ្យាស្ថានជាតិស្ថិតិ" />
+</a>
+      <div class="mobile-widgets">
+    <ul id='accessibility-nav' class='contrast-switcher'>
+        
+
+    <li class="nav-link contrast contrast-default contrast-type-default">
+        <a title="បិទដំណើរការកម្រិតពណ៌ខ្ពស់"
+           aria-label="បិទដំណើរការកម្រិតពណ៌ខ្ពស់"
+           data-contrast-switch-to="default"
+           href="javascript:void(0)"
+           data-on="click"
+data-event-category="Accessibility"
+data-event-action="Change contrast setting"
+data-event-label="default"
+
+        >A</a>
+    </li>
+    <li class="nav-link contrast contrast-high contrast-type-default">
+        <a title="បើកដំណើរការកម្រិតពណ៌ខ្ពស់"
+           aria-label="បើកដំណើរការកម្រិតពណ៌ខ្ពស់"
+           data-contrast-switch-to="high"
+           href="javascript:void(0)"
+           data-on="click"
+data-event-category="Accessibility"
+data-event-action="Change contrast setting"
+data-event-label="high"
+
+        >A</a>
+    </li>
+
+
+    </ul><div class="language-toggle-mobile">
+        <div class="language-toggle-container">
+  
+  <div class="btn-group language-toggle-dropdown ">
+    <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+      <span class="language-globe-in-dropdown"><i class="fa fa-globe language-toggle-globe-dropdown"></i></span><span class="language-name">ភាសាខ្មែរ</span>
+      <span class="language-abbreviation">km</span><i class="language-toggle-caret fa fa-chevron-down"></i></button>
+    <ul class="dropdown-menu"><li class="language-option-en">
+            <a href="/en/1-a-2/">
+              English
+            </a>
+          </li></ul>
+  </div>
+</div>
+
+    </div></div>
+    </div>
+
+    <div class="search-and-desktop-widgets">
+      <div id="search" class="menu-target">
+  <form action="/search/">
+    <label class="sr-only" for="indicator_search">ស្វែងរក</label>
+    <input type="text" name="q" id="indicator_search" title="ស្វែងរក" /><!--
+    --><button aria-label="ស្វែងរក" id="search-btn" type="submit"><i class="fa fa-search" aria-hidden="false"></i></button>
+  </form>
+</div>
+
+      <div class="navbar navbar-default widgets-without-menu">
+        <ul class="nav navbar-nav contrast-switcher"><li class="language-toggle-menu-header">
+            
+
+
+
+
+
+  <div class="language-toggle-container">
+  <i class="fa fa-globe language-toggle-globe-links"></i>
+  <ul class="language-toggle-links"><li class="language-option-en">
+      <a class="language-toggle-link" href="/en/1-a-2/"><span class="language-name">English</span>
+        <span class="language-abbreviation">en</span></a>
+    </li></ul>
+</div>
+
+
+
+        </li>
+
+    <li class="nav-link contrast contrast-default contrast-type-default">
+        <a title="បិទដំណើរការកម្រិតពណ៌ខ្ពស់"
+           aria-label="បិទដំណើរការកម្រិតពណ៌ខ្ពស់"
+           data-contrast-switch-to="default"
+           href="javascript:void(0)"
+           data-on="click"
+data-event-category="Accessibility"
+data-event-action="Change contrast setting"
+data-event-label="default"
+
+        >A</a>
+    </li>
+    <li class="nav-link contrast contrast-high contrast-type-default">
+        <a title="បើកដំណើរការកម្រិតពណ៌ខ្ពស់"
+           aria-label="បើកដំណើរការកម្រិតពណ៌ខ្ពស់"
+           data-contrast-switch-to="high"
+           href="javascript:void(0)"
+           data-on="click"
+data-event-category="Accessibility"
+data-event-action="Change contrast setting"
+data-event-label="high"
+
+        >A</a>
+    </li>
+
+
+        </ul>
+      </div>
+    </div>
+
+    <div class="navbar navbar-default menu-without-widgets" id="main-nav">
+      <ul class="top-level">
+    <li id="menuToggle"
+        aria-label="បិទ / បើកម៉ឺនុយ។ ចុចដើម្បីពង្រីកឬបង្រួមម៉ឺនុយ។"
+        aria-haspopup="true">
+        <button data-target="menu-mobile" aria-expanded="false">មឺនុយ</button>
+        <ul class="nav navbar-nav menu-target contrast-switcher" id="menu-mobile"><li class="nav-link ">
+    <a href="/goals">គោលដៅ</a>
+</li><li class="nav-link ">
+    <a href="/reporting-status">ស្ថានភាពរបាយការណ៍</a>
+</li><li class="nav-link ">
+    <a href="/about">អំពី</a>
+</li><li class="nav-link ">
+    <a href="/guidance">ការណែនាំ</a>
+</li><li class="nav-link ">
+    <a href="/faq">សំណួរគេសួរញឹកញាប់</a>
+</li><li class="nav-link ">
+    <a href="/news">បច្ចុប្បន្នភាព</a>
+</li><li class="language-toggle-menu-header">
+    
+
+
+
+
+
+  <div class="language-toggle-container">
+  <i class="fa fa-globe language-toggle-globe-links"></i>
+  <ul class="language-toggle-links"><li class="language-option-en">
+      <a class="language-toggle-link" href="/en/1-a-2/"><span class="language-name">English</span>
+        <span class="language-abbreviation">en</span></a>
+    </li></ul>
+</div>
+
+
+
+</li>
+
+
+
+    <li class="nav-link contrast contrast-default contrast-type-default">
+        <a title="បិទដំណើរការកម្រិតពណ៌ខ្ពស់"
+           aria-label="បិទដំណើរការកម្រិតពណ៌ខ្ពស់"
+           data-contrast-switch-to="default"
+           href="javascript:void(0)"
+           data-on="click"
+data-event-category="Accessibility"
+data-event-action="Change contrast setting"
+data-event-label="default"
+
+        >A</a>
+    </li>
+    <li class="nav-link contrast contrast-high contrast-type-default">
+        <a title="បើកដំណើរការកម្រិតពណ៌ខ្ពស់"
+           aria-label="បើកដំណើរការកម្រិតពណ៌ខ្ពស់"
+           data-contrast-switch-to="high"
+           href="javascript:void(0)"
+           data-on="click"
+data-event-category="Accessibility"
+data-event-action="Change contrast setting"
+data-event-label="high"
+
+        >A</a>
+    </li>
+
+
+
+</ul>
+
+    </li>
+    <li id="searchToggle"
+        aria-label="ស្វែងរកបិទ / បើក។ ចុចដើម្បីពង្រីកឬបង្រួមរបារស្វែងរក។"
+        aria-haspopup="true">
+        <button data-target="search-mobile" aria-expanded="false">ស្វែងរក</button>
+        <div id="search-mobile" class="menu-target">
+  <form action="/search/">
+    <label class="sr-only" for="indicator_search-mobile">ស្វែងរក</label>
+    <input type="text" name="q" id="indicator_search-mobile" title="ស្វែងរក" /><!--
+    --><button aria-label="ស្វែងរក" id="search-mobile-btn" type="submit"><i class="fa fa-search" aria-hidden="false"></i></button>
+  </form>
+</div>
+
+    </li>
+</ul>
+      <ul class="nav navbar-nav menu-target " id="menu"><li class="nav-link ">
+    <a href="/goals">គោលដៅ</a>
+</li><li class="nav-link ">
+    <a href="/reporting-status">ស្ថានភាពរបាយការណ៍</a>
+</li><li class="nav-link ">
+    <a href="/about">អំពី</a>
+</li><li class="nav-link ">
+    <a href="/guidance">ការណែនាំ</a>
+</li><li class="nav-link ">
+    <a href="/faq">សំណួរគេសួរញឹកញាប់</a>
+</li><li class="nav-link ">
+    <a href="/news">បច្ចុប្បន្នភាព</a>
+</li>
+
+</ul>
+
+    </div>
+
+  </div>
+
+</header>
+<div id="top" tabindex=-1></div>
+
+
+
+
+
+<script type="text/template" id="item_template">
+  <% _.each(fields, function(fieldItem) { %>
+    <div class="variable-selector
+      <% if(allowedFields.indexOf(fieldItem.field) == -1) { %> disallowed <% }%>
+      <% if (typeof childFields !== 'undefined' && childFields.indexOf(fieldItem.field) !== -1) { %> child <% }%>
+      <% // @deprecated start %>
+      <% if (typeof childFields === 'undefined' && allowedFields.indexOf(fieldItem.field) == -1) { %> child <% }%>
+      <% // @deprecated end %>
+      "
+      data-field="<%=fieldItem.field%>"
+    >
+      <button class='accessBtn' tabindex='0' aria-expanded='false'
+        <% if(allowedFields.indexOf(fieldItem.field) == -1) { %>
+        aria-describedby='variable-hint-<%=fieldItem.field.replace(/ /g, '-')%>'
+        <% }%>
+      >
+        <% if(allowedFields.indexOf(fieldItem.field) == -1) { %><h6><% } else { %><h5><% } %>
+          <span aria-hidden="true"><%=translations.t(fieldItem.label)%><i class="fa fa-chevron-down"></i></span>
+          <span class="sr-only">បង្ហាញប្រភេទរង៖ <%=translations.t(fieldItem.label)%></span>
+        <% if(allowedFields.indexOf(fieldItem.field) == -1) { %></h6><% } else { %></h5><% } %>
+      </button>
+      <div class="variable-options">
+        <fieldset>
+          <legend class="sr-only">ប្រភេទរង - <%=translations.t(fieldItem.field)%></legend>
+          <div>
+            <button data-type="select">ជ្រើសយកទាំងអស់</button>
+            <button data-type="clear">លុបចេញ​ទាំងអស់</button>
+          </div>
+          <% _.each(fieldItem.values, function(item) { %>
+            <label>
+              <input type="checkbox" <%=item.checked ? 'checked' : ''%> value="<%=item.value%>" data-field="<%=fieldItem.field%>" /><%=translations.t(item.value)%>
+            </label>
+          <% }); %>
+        </fieldset>
+      </div>
+
+      <% if(allowedFields.indexOf(fieldItem.field) == -1) { %>
+        <div class="variable-hint" id="variable-hint-<%=fieldItem.field.replace(/ /g, '-')%>">អាចប្រើបាននៅពេល '% field' ត្រូវបានជ្រើសរើស
+        </div>
+        <div class="no-data-hint" id="no-data-hint-<%=fieldItem.field.replace(/ /g, '-')%>">
+          មិនមានជំរើសទេដោយសារត្រងខាងលើ
+        </div>
+      <% }%>
+
+    </div>
+  <% }); %>
+</script>
+
+<script type="text/template" id="units_template">
+  
+    <h4>ឯកតារង្វាស់</h4>
+    <fieldset>
+      <legend class="sr-only">ឯកតារង្វាស់</legend>
+      <% _.each(units, function(unitsItem, index) { %>
+        <% var checked = (selectedUnit) ? (selectedUnit==unitsItem) : (index==0); %>
+        <label><input type="radio" name="unit" value="<%=unitsItem%>" tabindex=0 <%=checked ? 'checked' : ''%> /> <%=translations.t(unitsItem)%></label>
+      <% }); %>
+    </fieldset>
+  
+</script>
+
+<script type="text/template" id="series_template">
+  
+    <h4>ស៊េរី</h4>
+    <fieldset>
+      <legend class="sr-only">ស៊េរី</legend>
+      <% _.each(serieses, function(seriesItem, index) { %>
+        <% var checked = (selectedSeries) ? (selectedSeries==seriesItem) : (index==0); %>
+        <label><input type="radio" name="series" value="<%=seriesItem%>" tabindex=0 <%=checked ? 'checked' : ''%> /> <%=translations.t(seriesItem)%></label>
+      <% }); %>
+    </fieldset>
+  
+</script>
+
+<script>translations['indicator'] = {"annotation_2030_target":"គោលដៅ ២០៣០","announce_data_added":"តារាងនិងតារាងត្រូវបានធ្វើបច្ចុប្បន្នភាពដើម្បីបញ្ចូលទិន្នន័យ។","announce_data_not_available":"តារាងនិងតារាងបង្ហាញទិន្នន័យ។","announce_data_removed":"តារាងនិងតារាងត្រូវបានធ្វើបច្ចុប្បន្នភាពដើម្បីមិនរាប់បញ្ចូលទិន្នន័យ។","chart":"គំនូសតាង","chart_annotation":"ចំណារពន្យល់គំនូសតាង","clear_all":"លុបចេញ​ទាំងអស់","clear_selections":"ការជ្រើសរើសច្បាស់","data_keyboard_navigation":"ចុចបញ្ចូលដើម្បីរកចំណុចទិន្នន័យដោយប្រើព្រួញឆ្វេងនិងស្តាំ។","data_not_available":"ទិន្នន័យនេះមិនមានទេ។ សូមជ្រើសរើសទិន្នន័យជំនួសដើម្បីបង្ហាញ។","data_tabular_alternative":"សម្រាប់ជម្រើសទិន្នន័យថេបសូមមើលផ្ទាំងតារាង។","dataset_size_warning":"មានសំណុំទិន្នន័យច្រើនពេកដើម្បីបង្ហាញនៅលើតារាង។ មិនមែនទាំងអស់នឹងត្រូវបានបង្ហាញរហូតដល់អ្នកដកជម្រើសមួយចំនួនចេញ។","download_chart":"ទាញយកតារាង CSV","download_chart_image":"ទាញយករូបភាពគំនូសតាង","download_chart_image_title":"ទាញយកគំនូសតាងជារូបភាព","download_csv":"ទាញយកស៊ីអេសវី","download_csv_title":"ទាញយកជាស៊ីអេសអេស","download_geojson":"ទាញយក GeoJSON","download_geojson_title":"ទាញយកជា GeoJSON","download_headline":"ទាញយកចំណងជើងស៊ីអេសអេស","download_headline_title":"ទាញយកទិន្នន័យចំណងជើងជា CSV","download_source":"ទាញយកប្រភពស៊ីអេសអេស","download_source_sdmx":"ទាញយកប្រភព SDMX","download_source_sdmx_title":"ទាញយកទិន្នន័យប្រភពជា SDMX","download_source_title":"ទាញយកទិន្នន័យប្រភពជាស៊ីអេសអេស","download_table":"ទាញយកតារាង CSV","edit":"កែប្រែ","edit_configuration":"កែសម្រួលការកំណត់រចនាសម្ព័ន្ធ","edit_data":"កែទិន្នន័យ","edit_metadata":"កែសម្រួលទិន្នន័យមេតាតា","footnote":"លេខយោង","geographical_area":"តំបន់ភូមិសាស្ត្រ","global_metadata":"ទិន្នន័យមេតាសកល","global_metadata_blurb":"តារាងនេះផ្តល់ព័ត៌មានអំពីទិន្នន័យមេតាសម្រាប់សូចនាករអេសជីជីដែលបានកំណត់ដោយគណៈកម្មការស្ថិតិរបស់អង្គការសហប្រជាជាតិ។ [១០៨] ទិន្នន័យមេតាសកលពេញលេញ [១៨០] ត្រូវបានផ្គត់ផ្គង់ដោយផ្នែកស្ថិតិរបស់អង្គការសហប្រជាជាតិ។","legend_help":"ចុចលើតាងដើម្បីយកបន្ទាត់នីមួយៗចេញពីតារាង។","loading":"កំពុងតម្លើង","loading_map":"កំពុងផ្ទុកផែនទី","map":"ផែនទី","map_search":"ស្វែងរក","map_search_hide":"លាក់ការស្វែងរក","map_search_show":"បង្ហាញការស្វែងរក","map_year_slider":"រំកិលឆ្នាំ","national_metadata":"ម៉េតាទិន្នន័យថ្នាក់ជាតិ","national_metadata_blurb":"តារាងនេះផ្តល់ទិន្នន័យមេតាសម្រាប់សូចនាករជាក់ស្តែងដែលអាចរកបានពីស្ថិតិ% country_name ដែលនៅជិតសូចនាករ SDG សកលដែលត្រូវគ្នា។ សូមកត់សម្គាល់ថាទោះបីជាសូចនាករអេសជីជីសកលអាចប្រើបានយ៉ាងពេញលេញពីស្ថិតិស្ថិតិប្រទេស% តារាងនេះគួរតែត្រូវបានពិគ្រោះយោបល់សម្រាប់ព័ត៌មានស្តីពីវិធីសាស្រ្តជាតិនិងព័ត៌មានមេតាដាតាផ្សេងទៀតដែលទាក់ទងនឹងប្រទេស% ។","next":"សូចនាករបន្ទាប់","no_data_hint":"មិនមានជំរើសទេដោយសារត្រងខាងលើ","plot_legend_description":"រឿងព្រេងដីឡូត៍៖ បញ្ជីនៃបន្ទាត់ដែលមានក្នុងតារាង","previous":"សូចនាករមុន","select_all":"ជ្រើសយកទាំងអស់","series":"ស៊េរី","series_help":"ជ្រើសរើសប្រភេទចេញពីបញ្ជីខាងក្រោមដើម្បីមើលការបំបែកទិន្នន័យផ្សេងៗគ្នា។ ខ្លះនឹងមិនមានទេរហូតដល់ថ្នាក់ខ្ពស់ត្រូវបានជ្រើសរើស។","source":"ប្រភព","sources":"ប្រភព","status":"ស្ថានភាពសូចនាករ","sub_categories":"ប្រភេទរង","sub_categories_show":"បង្ហាញប្រភេទរង៖","table":"តារាង","table_column_sort":"ចុចដើម្បីតម្រៀបតាមជួរឈរនេះ","tags":"ស្លាក","unit":"ឯកតា","unit_of_measurement":"ឯកតារង្វាស់","units_type":"ប្រភេទឯកតា","variable_hint":"អាចប្រើបាននៅពេល '% field' ត្រូវបានជ្រើសរើស","view_indicator_list":"មើលបញ្ជីសូចនាករគោលដៅរបស់គោលដៅនេះ"};</script>
+
+<script>translations['data'] = null;</script>
+
+
+<div class="container">
+  
+<ol class="breadcrumb">
+  
+  <li><a href="/">ទំព័រដើម</a></li>
+  <li><a href="/goals">គោលដៅ</a></li>
+  
+  <li><a href="/1" title="បញ្ចប់ភាពក្រីក្រនៅគ្រប់ទម្រង់ទាំងអស់នៅគ្រប់ទីកន្លែង">គោលដៅ 1</a></li>
+  
+</ol>
+
+
+  
+</div>
+<div class="heading goal-banner indicator goal-1">
+  <div class="container">
+    <div class="row">
+      
+      <div class="col-xs-4 col-md-3 col-lg-2 goal-icon goal-tiles">
+        <a href="/1" title="មើលបញ្ជីសូចនាករគោលដៅរបស់គោលដៅនេះ">
+          <img src="/site/assets/img/goals/km/1.png" alt="គ្មានភាពក្រីក្រ - គោលដៅ 1" id="goal-1" class="goal-icon-image goal-icon-image-"/>
+        </a>
+      </div>
+      <div class="col-xs-8 col-md-9 col-lg-10 indicator-details">
+      
+        <div>
+          <h1>
+            
+            សូចនាករ 1.a.2
+            
+            <span class="lead-copy">សមាមាត្រនៃការចំណាយសរុបរបស់រដ្ឋាភិបាលទៅលើសេវាកម្មចាំបាច់ (ការអប់រំសុខភាពនិងការគាំពារសង្គម)</span>
+          </h1>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="main-content" class="container goal-1" role="main">
+  
+
+  
+
+  
+
+  
+
+
+  
+
+
+
+<div class="row"
+  id="indicatorData"
+  data-indicatorid='indicator_1-a-2'
+  data-id="1-a-2"
+  data-country="Cambodia"
+  data-charttitle="សមាមាត្រនៃការចំណាយសរុបរបស់រដ្ឋាភិបាលទៅលើសេវាកម្មចាំបាច់ (ការអប់រំសុខភាពនិងការគាំពារសង្គម)"
+  data-charttitles="null"
+  data-measurementunit=""
+  data-xaxislabel=""
+  data-showdata="false"
+  data-graphtype="line"
+  data-graphtypes="null"
+  data-geocoderegex=""
+  data-showmap=""
+  data-startvalues="null"
+  data-graphlimits="null"
+  data-stackeddisaggregation=""
+  data-graphannotations="null"
+  data-graphtargetlines="null"
+  data-graphseriesbreaks="null"
+  data-indicatordownloads="null"
+  data-dataschema="{&quot;fields&quot;:[{&quot;name&quot;:&quot;Value&quot;,&quot;type&quot;:&quot;number&quot;,&quot;title&quot;:&quot;Value&quot;},{&quot;name&quot;:&quot;Year&quot;,&quot;type&quot;:&quot;number&quot;,&quot;title&quot;:&quot;Year&quot;}]}"
+  data-compositebreakdownlabel=""
+  data-precision="null"
+>
+  
+  <div id="indicator-main" class="indicator-main col-md-12">
+  
+  <ul class="nav nav-tabs spacer medium" role="tablist">
+
+  <li role="presentation" class="nav-item active">
+  <a class="nav-link" data-toggle="tab" id="tab-national" href="#national" aria-controls="national" role="tab" data-on="click"
+data-event-category="Tab change"
+data-event-action="Change metadata view"
+data-event-label="Change to National Metadata tab"
+>ម៉េតាទិន្នន័យថ្នាក់ជាតិ</a>
+</li>
+
+<li role="presentation" class="nav-item">
+  <a class="nav-link" data-toggle="tab" id="tab-global" href="#global" aria-controls="global" role="tab" data-on="click"
+data-event-category="Tab change"
+data-event-action="Change metadata view"
+data-event-label="Change to Global Metadata tab"
+>ទិន្នន័យមេតាសកល</a>
+</li>
+
+<li role="presentation" class="nav-item">
+  <a class="nav-link" data-toggle="tab" id="tab-sources" href="#sources" aria-controls="sources" role="tab" data-on="click"
+data-event-category="Tab change"
+data-event-action="Change metadata view"
+data-event-label="Change to Sources tab"
+>ប្រភព</a>
+</li>
+
+
+  
+</ul>
+
+<div class="tab-content">
+  
+    <div role="tabpanel" class="tab-pane active" id="national">
+  <!-- National Metadata -->
+  <div >
+    <article>
+      <p>
+        
+        
+        តារាងនេះផ្តល់ទិន្នន័យមេតាសម្រាប់សូចនាករជាក់ស្តែងដែលអាចរកបានពីស្ថិតិ% country_name ដែលនៅជិតសូចនាករ SDG សកលដែលត្រូវគ្នា។ សូមកត់សម្គាល់ថាទោះបីជាសូចនាករអេសជីជីសកលអាចប្រើបានយ៉ាងពេញលេញពីស្ថិតិស្ថិតិប្រទេស% តារាងនេះគួរតែត្រូវបានពិគ្រោះយោបល់សម្រាប់ព័ត៌មានស្តីពីវិធីសាស្រ្តជាតិនិងព័ត៌មានមេតាដាតាផ្សេងទៀតដែលទាក់ទងនឹងប្រទេស% ។
+      </p>
+      <table class="table">
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+      
+        
+          
+      
+        
+      
+      
+      <tr>
+        <th scope="row">គោលដៅ </th>
+        <td>
+          
+            <p> គោលដៅទី១. បញ្ចប់ភាពក្រីក្រគ្រប់ទម្រង់នៅគ្រប់ទីកន្លែង</p>
+<p>’</p>
+
+          
+        </td>
+        </tr>
+        
+      
+  
+      
+        
+      
+      
+      <tr>
+        <th scope="row">គោលដៅ </th>
+        <td>
+          
+            <p> គោលដៅ ១.a: ធានា ការ ប្រមូល ធនធាន ដ៏ សំខាន់ ពី ប្រភព ផ្សេងៗ រួម មាន តាម រយៈ កិច្ចសហប្រតិបត្តិការ អភិវឌ្ឍន៍ ដែល បាន បង្កើន ឡើង ដើម្បី ផ្តល់ នូវ មធ្យោបាយ គ្រប់គ្រាន់ និង អាច ព្យាករណ៍ បាន សម្រាប់ ប្រទេស កំពុង អភិវឌ្ឍ ជា ពិសេស ប្រទេស អភិវឌ្ឍន៍ យ៉ាង តិច បំផុត ដើម្បី អនុវត្ត កម្មវិធី និង គោលនយោបាយ ដើម្បី បញ្ចប់ ភាព ក្រីក្រ នៅ គ្រប់ វិមាត្រ របស់ ខ្លួន</p>
+
+          
+        </td>
+        </tr>
+        
+      
+  
+      
+        
+      
+      
+      <tr>
+        <th scope="row">សូចនាករ </th>
+        <td>
+          
+            <p> 1.a.2: សមាមាត្រនៃការចំណាយសរុបរបស់រដ្ឋាភិបាលលើសេវាកម្មចាំបាច់ (ការអប់រំ សុខភាព និងការការពារសង្គម)</p>
+<p>ឯកសារនេះអនុវត្តលើសមាសធាតុអប់រំរបស់ចង្អុលបង្ហាញ 1.a.2</p>
+
+          
+        </td>
+        </tr>
+        
+      
+  
+      
+        
+      
+      
+      <tr>
+        <th scope="row">ស៊េរី </th>
+        <td>
+          
+            <p> ចំណែក នៃ ការ ចំណាយ សរុប របស់ រដ្ឋាភិបាល លើ ការ អប់រំ[៥៥]</p>
+<p>សមាមាត្រ នៃ ការ ចំណាយ សរុប របស់ រដ្ឋាភិបាល លើ សុខភាព[១][១១៥]សមាមាត្រ នៃ ការ ចំណាយ សរុប របស់ រដ្ឋាភិបាល លើ ការ ការពារ សង្គម[១៧៨]&lt;/p&gt;សមាមាត្រ នៃ ការ ចំណាយ សរុប របស់ រដ្ឋាភិបាល លើ វិស័យ កសិកម្ម&lt;/p&gt;</p>
+
+          
+        </td>
+        </tr>
+        
+      
+  
+      
+        
+      
+      
+      <tr>
+        <th scope="row">ទិន្នន័យមេតាធ្វើបច្ចុប្បន្នភាព </th>
+        <td>
+          
+            <p> ខែតុលា 2020</p>
+
+          
+        </td>
+        </tr>
+        
+      
+  
+      
+        
+      
+      
+      <tr>
+        <th scope="row">សូចនាករដែលទាក់ទង </th>
+        <td>
+          
+            <p>4.5.3, 4.5.4, 4.5.5, 4.a.1, 4.b.1, 4.b.2</p>
+
+          
+        </td>
+        </tr>
+        
+      
+  
+      
+        
+          
+      
+        
+      
+      
+      <tr>
+        <th scope="row">អង្គការ </th>
+        <td>
+          
+            <p> នាយកដ្ឋានស្ថិតិសង្គម, NIS, Ministry of Planning</p>
+
+          
+        </td>
+        </tr>
+        
+      
+  
+      
+        
+      
+      
+      <tr>
+        <th scope="row">អ្នកទំនាក់ទំនង </th>
+        <td>
+          
+            <p> លោក គឹម ណេត</p>
+
+          
+        </td>
+        </tr>
+        
+      
+  
+      
+        
+      
+      
+      <tr>
+        <th scope="row">ទាក់ទងអង្គភាពអង្គភាព </th>
+        <td>
+          
+            <p> នាយកដ្ឋានស្ថិតិសង្គម NIS</p>
+
+          
+        </td>
+        </tr>
+        
+      
+  
+      
+        
+      
+      
+      <tr>
+        <th scope="row">មុខងារទាក់ទងមនុស្ស </th>
+        <td>
+          
+            <p> នាយកនាយកដ្ឋាន</p>
+
+          
+        </td>
+        </tr>
+        
+      
+  
+      
+        
+      
+      
+      <tr>
+        <th scope="row">ទូរស័ព្ទទំនាក់ទំនង </th>
+        <td>
+          
+            <p>017 380 053/016 770 769</p>
+
+          
+        </td>
+        </tr>
+        
+      
+  
+      
+        
+      
+      
+      <tr>
+        <th scope="row">ទំនាក់ទំនងអ៊ីមែល </th>
+        <td>
+          
+            <p> No. 386 Street 360, Sangkat Boeung Kengkang I, Khan Chamkarmon, Phnom Penh, Cambodia</p>
+
+          
+        </td>
+        </tr>
+        
+      
+  
+      
+        
+      
+      
+      <tr>
+        <th scope="row">អ៊ីមែលទំនាក់ទំនង </th>
+        <td>
+          
+            <p>kimnettt@gmail.com</p>
+
+          
+        </td>
+        </tr>
+        
+      
+  
+      
+        
+          
+      
+        
+      
+      
+      <tr>
+        <th scope="row">និយមន័យនិងគំនិត </th>
+        <td>
+          
+            <p> សរុប ការ ចំណាយ របស់ រដ្ឋាភិបាល (ក្នុង ស្រុក តំបន់ និង កណ្ដាល) លើ ការ អប់រំ (បច្ចុប្បន្ន, មូលនិធិ និង ការ ផ្ទេរ) បាន បង្ហាញ ថា ជា ភាគរយ នៃ ការ ចំណាយ សរុប របស់ រដ្ឋាភិបាល លើ គ្រប់ វិស័យ (រួម ទាំង សុខភាព ការ អប់រំ សេវា សង្គម ជាដើម។ល។ វា រួម មាន ការ ចំណាយ ដែល ផ្តល់ មូលនិធិ ដោយ ការ ផ្ទេរ ពី ប្រភព អន្តរ ជាតិ ទៅ កាន់ រដ្ឋាភិបាល ។ </p>
+<p> ការ ចំណាយ របស់ រដ្ឋាភិបាល លើ ការ អប់រំ គ្រប ដណ្តប់ លើ ការ ចំណាយ អប់រំ ដោយ គ្រប់ កម្រិត រដ្ឋាភិបាល ( មូលដ្ឋាន តំបន់ កណ្តាល ) លើ ប្រព័ន្ធ អប់រំ ជា ផ្លូវ ការ ចាប់ តាំង ពី ក្មេង ទៅ ការ អប់រំ ជាន់ ខ្ពស់ ទាំង នៅ ក្នុង ស្ថាប័ន ណែ នាំ សាធារណៈ និង ឯក ជន និង មិន មែន ជា ការ ណែ នាំ នៅ ក្នុង ព្រំ ដែន ប្រទេស មួយ ។ </p>
+<p> ការ ចំណាយ លើ ការ អប់រំ រួម មាន ការ ចំណាយ លើ ទំនិញ និង សេវា កម្ម សំខាន់ ៗ ដូច ជា បុគ្គលិក បង្រៀន អគារ សាលា ឬ សៀវភៅ សាលា និង សម្ភារ បង្រៀន និង ទំនិញ អប់រំ នៅ បរិវេណ សាលា និង ទំនិញ អប់រំ និង សេវា ដូច ជា សេវា ជំនួយ រដ្ឋ បាល ទូទៅ និង សកម្មភាព ផ្សេង ទៀត ។ </p>
+
+          
+        </td>
+        </tr>
+        
+      
+  
+      
+        
+      
+      
+      <tr>
+        <th scope="row">ឯកតារង្វាស់ </th>
+        <td>
+          
+            <p> ភាគរយ (%)</p>
+
+          
+        </td>
+        </tr>
+        
+      
+  
+      
+        
+          
+      
+        
+          
+      
+        
+      
+      
+      <tr>
+        <th scope="row">ប្រភពទិន្នន័យ </th>
+        <td>
+          
+            <p> របាយការណ៍ហិរញ្ញវត្ថុប្រចាំឆ្នាំរបស់ក្រសួងសេដ្ឋកិច្ច និងហិរញ្ញវត្ថុ (MEF) និងក្រសួងអប់រំ យុវជន និងកីឡា (MEYS)</p>
+
+          
+        </td>
+        </tr>
+        
+      
+  
+      
+        
+      
+      
+      <tr>
+        <th scope="row">វិធីសាស្ត្រប្រមូលទិន្នន័យ </th>
+        <td>
+          
+            <p> ទិន្នន័យ ស្តី ពី ការ ចំណាយ សរុប របស់ រដ្ឋាភិបាល ( គ្រប់ វិស័យ ) ត្រូវ បាន ទទួល ពី មូលដ្ឋាន ទិន្នន័យ ហិរញ្ញ វត្ថុ MEF និង ត្រូវ បាន ធ្វើ បច្ចុប្បន្ន ភាព ម្តង ក្នុង មួយ ឆ្នាំ ។ ចំណែក ទិន្នន័យ ស្តី ពី ការ ចំណាយ ក្នុង វិស័យ ជាក់លាក់ ដូចជា ការ ចំណាយ លើ ការ អប់រំ ការ ចំណាយ លើ សុខភាព ត្រូវ បាន ផ្ដល់ ដោយ MEYS, MOH ជាដើម។ល។ </p>
+
+          
+        </td>
+        </tr>
+        
+      
+  
+      
+        
+      
+      
+      <tr>
+        <th scope="row">ប្រតិទិនប្រមូលទិន្នន័យ </th>
+        <td>
+          
+            <p> ការស្ទង់មតិ ជុំបន្ទាប់៖ ២០២១ </p>
+
+          
+        </td>
+        </tr>
+        
+      
+  
+      
+        
+      
+      
+      <tr>
+        <th scope="row">ប្រតិទិនចេញផ្សាយទិន្នន័យ </th>
+        <td>
+          
+            <p> មួយឆ្នាំបន្ទាប់ពីការស្ទង់មតិ</p>
+
+          
+        </td>
+        </tr>
+        
+      
+  
+      
+        
+      
+      
+      <tr>
+        <th scope="row">អ្នកផ្តល់ទិន្នន័យ </th>
+        <td>
+          
+            <p> វិទ្យាស្ថានជាតិស្ថិតិ</p>
+
+          
+        </td>
+        </tr>
+        
+      
+  
+      
+        
+      
+      
+      <tr>
+        <th scope="row">អ្នកចងក្រងទិន្នន័យ </th>
+        <td>
+          
+            <p> ក្រុម ការងារ ជាតិ ស្តី ពី ការ វាស់ ស្ទង់ ភាព ក្រីក្រ ក្រសួង រៀបចំ ផែនការ និង ក្រសួង សេដ្ឋកិច្ច និង ហិរញ្ញវត្ថុ</p>
+
+          
+        </td>
+        </tr>
+        
+      
+  
+      
+        
+      
+      
+      <tr>
+        <th scope="row">អាណត្តិស្ថាប័ន </th>
+        <td>
+          
+            <p> ដោយ សារ មាត្រា ១២ នៃ ច្បាប់ ស្តី ពី ស្ថិតិ NIS ទទួល ខុស ត្រូវ ចំពោះ :[៧៦]</p>
+<p>[៨៤]ប្រមូល ផ្សះ ចងក្រង ការ ចងក្រង ការ វិភាគ ការ បោះ ពុម្ព ផ្សាយ និង ផ្សព្វផ្សាយ ទិន្នន័យ មូលដ្ឋាន ដោយ ធ្វើ ជំរឿន និង ការ ស្ទង់ មតិ និង ប្រើប្រាស់ ប្រភព ទិន្នន័យ រដ្ឋ បាល។ &lt;/li&gt; &lt;li&gt; ការចងក្រងគណនីជាតិ និងសន្ទស្សន៍តម្លៃ ក៏ដូចជាការចង្អុលបង្ហាញផ្នែកសេដ្ឋកិច្ច បរិស្ថាន និងសង្គម។  &lt;/li&gt; &lt;li&gt; សម្រប សម្រួល ជាមួយ ក្រសួង បន្ទាត់ ជា អ្នក ផលិត ទិន្នន័យ ដូច ដែល បាន សន្មត ដោយ ច្បាប់ ស្ថិតិ ; និង[៤៧៥][៤៨០]មុខងារជា ឃ្លាំងកណ្តាលនៃ ការចង្អុលបង្ហាញ SDG។ &lt;/li&gt; &lt;/ul&gt;</p>
+
+          
+        </td>
+        </tr>
+        
+      
+  
+      
+        
+          
+      
+        
+      
+      
+      <tr>
+        <th scope="row">សនិទានភាព </th>
+        <td>
+          
+            <p> ការ ចង្អុល បង្ហាញ នេះ ត្រូវ បាន ប្រើប្រាស់ ដើម្បី វាយ តម្លៃ ការ សង្កត់ ធ្ងន់ របស់ រដ្ឋាភិបាល ទៅ លើ ការ អប់រំ ទាក់ ទង នឹង ការ វិនិយោគ របស់ ខ្លួន នៅ ក្នុង វិស័យ ផ្សេង ទៀត ។ ការ ចង្អុល បង្ហាញ នេះ បង្ហាញ ថា តើ ការ អប់រំ អាទិភាព មាន ចំនួន ប៉ុន្មាន សម្រាប់ រដ្ឋាភិបាល ដែល បាន ផ្តល់ ឲ្យ ក្នុង ពេល វេលា ឬ បើ ប្រៀប ធៀប ទៅ នឹង ប្រទេស ផ្សេង ទៀត ។ </p>
+
+          
+        </td>
+        </tr>
+        
+      
+  
+      
+        
+      
+      
+      <tr>
+        <th scope="row">យោបល់និងដែនកំណត់ </th>
+        <td>
+          
+            <p> ក្នុង ករណី ខ្លះ ទិន្នន័យ ស្តី ពី ការ ចំណាយ សាធារណៈ សរុប ស្តី ពី ការ អប់រំ សំដៅ ទៅ លើ ក្រសួង អប់រំ យុវជន និង កីឡា ដោយ មិន រាប់ បញ្ចូល ក្រសួង ផ្សេង ទៀត ក៏ អាច ចំណាយ ថវិកា របស់ ខ្លួន ទៅ លើ សកម្មភាព អប់រំ ផង ដែរ។ </p>
+
+          
+        </td>
+        </tr>
+        
+      
+  
+      
+        
+      
+      
+      <tr>
+        <th scope="row">វិធីនៃការគណនា </th>
+        <td>
+          
+            <p> ការ ចំណាយ សរុប របស់ រដ្ឋាភិបាល សម្រាប់ កម្រិត អប់រំ ដែល បាន ផ្ដល់ ឲ្យ (ឧ. បឋម សិក្សា ទី ២ ឬ គ្រប់ កម្រិត រួម គ្នា) ត្រូវ បាន បង្ហាញ ថា ជា ភាគរយ នៃ ការ ចំណាយ សរុប របស់ រដ្ឋាភិបាល (គ្រប់ វិស័យ) ។ </p>
+<p> <img alt="Mathematical formula" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAG0AAAAxCAYAAADQtCfaAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAX6SURBVHhe7Zp/TFVlGMef678FJFQzBtQk10iNMAMCpWBTFJy6QgQXxVaB5pJFJQ7BrUCmaG5aRlD6j6YX1M025ZebFgoBUQ2nsaawWoy1Coysf6P7fTzv3eHcc+4vL5dzru9nO3vP+95z7+D9nufnObYpBySxFHOUUWIhpGgWRIpmQaRoFkSKZkGkaBZEimZBpGgWRBbXZmHqR+XEDbYneZCWZkH0Lc0b1UOQK1e+p7XrttKtW3/T3j3ltH37a7RqdQl1dHTz51P/XedRvaZFXDMjSEtzZdmyJVRQkENLly5kwUDVzs00d244Xe46xnPwxfF6Hs+fa2CRcOAc3wsGUjQNpSX5bGlgfPwvert8D31yuJoFFUxO/sNjSspTPILw8PspPj5Omc0sUjQNiYlP8Nja2kXVuz6id8qL2frU9PdfpezsdIqKeoCFfTY5n0W1n9yvXDGzSNF0KHljA71cVEGPPRrtIhjouvwdxzTbnIX04EPpQbMwgRRNh4uX+thF5uVlKyvT6ezsppMn9jlj2ZKkBOWT4CCzRw1vbq2hjOXP0NkvL1LmC8lUWpqvfHIHuENY1/DNDpo/P0ZZDRIye3TFbm/lES5x/bos2rf/KM/V9PVddbjD2GmC4Xv19UeUmXc0Nrb4/B2BFE0BiUdV9SGq+eAtnq9YkUbDw79y7aamu+cHR2q/SJkRDQ7+xNaZlpbEVogaLjLqOV5/fMEqPh8ZGVWuvsPOqoO0ecv7VLHjAMdF7eeekKI5gGBIPAAyQnD6dCePSPnFpkKIhgY7NTe38WbjeDrpRY5/yB6HhkYc5cEunrecaqe+XjtbpZbdtWVc+/35RzfHRV/drIxpAQbCvpRXRjdvtLPlpaQW8LkaWO/Hh0/4XiJ4imn4YXE3iQPmjrtSgGtg/vhM+Ge4B3G9QL2mPUKN3t5BWrkync8R/3COmCdcJ/asx+FiYYEQWL2f3mIoGsy9srKEWzOiVYM/QLgRYJW2TzC59FU/rcl9XpkRu1Mg3G509MMUF/cI1dU1OWLah9O6Kt7iNqYhEIu7BmwqzGV/jTtEYIW2TzCBy8vJyeBzjLhBcWNjz4pfXc/xC3Ost7c1OcX0BbeioYhMd2RFgtHR33gUrR5ghbaPGcA+affFXwxFw50BCxLWAVGQ2sJlajFL2wdxVRsztYe/tZGZMMweUfyhlhAgcEIcEbvUiOdLRl0CJDC1NdtYUIh/7doN3d+ZLSDmbAN36RElezQUraDwXT715MJM3fYJNTyl/IhnaOW4I5htH7hrWLQ77hX3qCsaXBjiWUzMPGXFFVxzt20fgJYONhPfE/UcflsNRM7MKnbGRXGzaIHLFSWF0WEmt+wvuu7RZrMpZ/q+FpuKxCMyMsJZ7YsYiNqr2X6ALQsCYbNFSaAGv4v20NjY71S7+1NeQwvoyNEztHjRApeEBu76laK1znT6nsRTTAsm6KoMfHuKhUY5IERXg2smxr9RZoEHlr48o0iZuYLnZ7iR9K6D+z90sNJ5Q+Eab14Q8hmzPJqBNcJiIRKSFvyjt2//63SXGHFgY/A5LHomQGsJXgJNXHRrADYXc3R4EhLieS2QnSJ/mXXR0KvbuHE1n6NzMjExSY1NLc6OCto+YWH3cbxE8zU1NZHXA83Pv4zR55/VcAMAcRjNAIB5cvLiaQ2FQHWK/MW0XX5swNDQsEtsCwZw0Rvysg2TFrjq48f2Ot0hEqPCTe+5uD3Up3Cb585/zWXRXf8vZnGPRgSy7eMLsIqBgevO7FYLbiZYUCA6Rf5iWtFmC9SVwMiNwZ0DNAxQfmwrq6MdFa/zg00tnl4Q8hcpmgZ1PNMDj14Qg0USgpJHz43C+tDVx7UXLvQoq4FBiqYBnaCszBRl5kqgOkWoO5EV+4MUTQXiFeKZEYHqFHEt2tzG9R6SFV+RoqnASzoAb0mp03dB7potPBoV4aJTBMTDTb0XhFBaiDpP+/6IN5g25Q9l0LSOiAhzeSLiEbOn/KEMssrY2HlsmXoW7Ql9S5OYGmlpFkSKZkGkaBZEimY5iP4HbwaK8sfNCowAAAAASUVORK5CYII=" /> </p>
+<p>[២៤៥៣] = ការ ចំណាយ លើ កម្រិត អប់រំ [២៤៩០] n[២៤៩៥] ជា ភាគរយ នៃ ការ ចំណាយ សរុប របស់ រដ្ឋាភិបាល ក្នុង ឆ្នាំ ហិរញ្ញ វត្ថុ [២៥៦៧]t[២៥៧២][២៥៧][២៥៨១] = ការ ចំណាយ សរុប របស់ រដ្ឋាភិបាល នៅលើកម្រិតអប់រំ <em>n</em> ក្នុងឆ្នាំហិរញ្ញ វត្ថុ <em>t</em>&lt;/p&gt;&lt;p&gt; = ការ ចំណាយសរុបរបស់រដ្ឋាភិបាលក្នុងឆ្នាំហិរញ្ញ វត្ថុ <em>t</em>&lt;/p&gt;</p>
+
+          
+        </td>
+        </tr>
+        
+      
+  
+      
+        
+      
+      
+      <tr>
+        <th scope="row">សុពលភាព </th>
+        <td>
+          
+            <p> ការ វិភាគ នៃ ការ ចង្អុល បង្ហាញ នេះ ផ្តល់ នូវ ការ ប៉ាន់ ស្មាន ដែល មាន មូលដ្ឋាន លើ កុមារ អំពី ភាព ក្រីក្រ រូបិយប័ណ្ណ ដោយ ផ្អែក លើ ការ វិភាគ ភាព ក្រីក្រ របស់ ធនាគារ ពិភព លោក នៅ ក្នុង ការ អង្កេត សង្គម និង សេដ្ឋកិច្ច កម្ពុជា ឆ្នាំ ២០០៩។  យើង បង្ហាញ ពី របៀប ដែល ភាព ក្រីក្រ នៃ ប្រជា ជន សរុប ប្រៀប ធៀប ទៅ នឹង ភាព ក្រីក្រ របស់ កុមារ ( សម្រាប់ អ្នក ដែល មាន អាយុ 17 ឆ្នាំ និង ក្រោម ) ហើយ បន្ទាប់ មក ផ្តល់ ទម្រង់ ភាព ក្រីក្រ ជា ច្រើន សម្រាប់ កុមារ ក្រីក្រ ។  លើសពីនេះទៀត យើងបានបង្ហាញពីប្រជាជនដែលខ្វះខាត ទៅតាមអត្រាភាពក្រីក្រ និងស្ថានភាពខ្វះខាតរូបិយវត្ថុ – ដូចដែលបានបង្ហាញនៅក្នុង UNICEF Cambodia 2012 ទម្រង់នៃភាពក្រីក្រកុមារ ដោយប្រើប្រាស់វិធានការ ដក ហូត។   </p>
+<p> ការ រាយ ការណ៍ របស់ យើង ត្រូវ បាន ធ្វើ ឡើង ដោយ ការ វិភាគ ស្ថាន ភាព នៅ ក្នុង គំនិត ហើយ យើង បាន បង្ហាញ បន្ថែម ទៀត នូវ ការ ស្តារ ឡើង វិញ នូវ ហានិភ័យ ភាព ក្រីក្រ របស់ កុមារ ដែល បង្ហាញ ពី ទំនាក់ទំនង រវាង កត្តា ភូមិ សាស្ត្រ គ្រួសារ និង សេដ្ឋ កិច្ច ជា ច្រើន ដែល អាច ជូន ដំណឹង ដល់ ការ ពិភាក្សា អំពី ការ កំណត់ សុខុមាល ភាព កុមារ និង ជា ពិសេស លើ ' របាំង ហិរញ្ញ វត្ថុ ' ។ </p>
+<p> ការ វិភាគ កាន់ តែ ស៊ី ជម្រៅ នៃ ទំនាក់ទំនង រវាង ភាព ក្រីក្រ រូបិយ ប័ណ្ណ និង ការ ខ្វះ ខាត កុមារ គឺ មាន នៅ ក្នុង អត្ថ បទ អម មួយ ដែល ជា ការ រុក រក ធម្ម ជាតិ កាន់ តែ ច្រើន ដើម្បី ពិនិត្យ មើល ទំនាក់ទំនង រវាង ការ ខ្វះ ខាត និង កម្រិត ប្រើប្រាស់ ខាង ក្រោម នៅ និង លើស ពី បន្ទាត់ ភាព ក្រីក្រ ។ </p>
+
+          
+        </td>
+        </tr>
+        
+      
+  
+      
+        
+          
+      
+        
+      
+      
+      <tr>
+        <th scope="row">ការគ្រប់គ្រងគុណភាព </th>
+        <td>
+          
+            <p> NIS បាន សម្រេច ចិត្ត ប្រើប្រាស់ វិធី សាស្ត្រ ស្ថិតិ ( ការ ផ្លាស់ ប្តូរ ) ដើម្បី សម្រេច បាន នូវ ការ ប្រៀប ធៀប កាន់ តែ ប្រសើរ រវាង ជុំ ផ្សេង ៗ នៃ ការ ស្ទង់ មតិ CSES ដោយ កែ សម្រួល គំរូ ទៅ នឹង ទំហំ ប្រជា ជន និង រចនា សម្ព័ន្ធ ដែល ត្រូវ បាន បង្កើត ឡើង ដោយ ការ ធ្វើ ជំរឿន ប្រជា ជន ជាតិ ដែល បាន ធ្វើ ឡើង ក្នុង ឆ្នាំ 2008 ។ ដើម្បី ឆ្លុះ បញ្ចាំង ពី ការ ផ្លាស់ ប្តូរ យ៉ាង លឿន នៃ ចំនួន ប្រជា ជន វា បាន បង្ហាញ ថា ចាំបាច់ ក្នុង ការ គម្រោង ប្រជា ជន ឆ្ពោះ ទៅ មុខ រហូត ដល់ ឆ្នាំ 2017 និង ថយ ក្រោយ រហូត ដល់ ឆ្នាំ 1993 ដោយ ពិចារណា ពី ការ មាន កូន មរណ ភាព និង អត្រា អន្តោប្រវេសន៍ ខាង ក្នុង ។ </p>
+
+          
+        </td>
+        </tr>
+        
+      
+  
+      
+        
+      
+      
+      <tr>
+        <th scope="row">ការធានា​គុណភាព </th>
+        <td>
+          
+            <p> ដំបូង ទិន្នន័យ នេះ ត្រូវ បាន បញ្ចូល ដោយ សេដ្ឋ វិទូ ក្រីក្រ ដែល ត្រូវ បាន ត្រួត ពិនិត្យ ដោយ ប្រុង ប្រយ័ត្ន ជាមួយ នឹង ព័ត៌មាន មេតា ដោយ ក្រុម កណ្តាល សំរាប់ តាម ដាន SDGs 1.2.2 នៅ ធនាគារ ពិភព លោក ។ បន្ទាប់ មក ទិន្នន័យ ត្រូវ បាន ផ្ញើ ទៅ UNDP និង UNICEF ដើម្បី ផ្ទៀង ផ្ទាត់ បន្ថែម ទៀត ។ </p>
+
+          
+        </td>
+        </tr>
+        
+      
+  
+      
+        
+      
+      
+      <tr>
+        <th scope="row">ការវាយតម្លៃគុណភាព </th>
+        <td>
+          
+            <p> អនុវត្ត តាម គោលការណ៍ គ្រឹះ នៃ ស្ថិតិ ផ្លូវការ និង អនុវត្ត ក្របខ័ណ្ឌ ធានា គុណភាព ជាតិ ។ </p>
+
+          
+        </td>
+        </tr>
+        
+      
+  
+      
+        
+      
+      
+      <tr>
+        <th scope="row">ភាពអាចរកបាននិងការបែងចែកទិន្នន័យ </th>
+        <td>
+          
+            <p> តាម កម្រិត អប់រំ ថ្នាក់ ជាតិ និង ថ្នាក់ ក្រោម ជាតិ (ថ្នាក់ ខេត្ត)[៧០]
+</p>
+
+          
+        </td>
+        </tr>
+        
+      
+  
+      
+        
+      
+      
+      <tr>
+        <th scope="row">ភាពប្រៀបធៀប / គម្លាតពីស្តង់ដារអន្តរជាតិ </th>
+        <td>
+          
+            <p> មិន មាន[១៦]
+</p>
+
+          
+        </td>
+        </tr>
+        
+      
+  
+      
+        
+          
+      
+        
+          
+      
+        
+          
+      
+        
+          
+      
+        
+          
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+</table>
+
+    </article>
+  </div>
+</div>
+<div role="tabpanel" class="tab-pane" id="global">
+  <!-- Global Metadata -->
+  <div>
+    <article>
+      <p>តារាងនេះផ្តល់ព័ត៌មានអំពីទិន្នន័យមេតាសម្រាប់សូចនាករអេសជីជីដែលបានកំណត់ដោយគណៈកម្មការស្ថិតិរបស់អង្គការសហប្រជាជាតិ។ [១០៨] ទិន្នន័យមេតាសកលពេញលេញ [១៨០] ត្រូវបានផ្គត់ផ្គង់ដោយផ្នែកស្ថិតិរបស់អង្គការសហប្រជាជាតិ។</p>
+      <table class="table">
+  
+      
+        
+          
+      
+        
+          
+      
+        
+          
+      
+        
+          
+      
+        
+          
+      
+        
+          
+      
+        
+          
+      
+        
+          
+      
+        
+          
+      
+        
+          
+      
+        
+          
+      
+        
+          
+      
+        
+          
+      
+        
+          
+      
+        
+          
+      
+        
+          
+      
+        
+          
+      
+        
+          
+      
+        
+          
+      
+        
+          
+      
+        
+          
+      
+        
+          
+      
+        
+          
+      
+        
+          
+      
+        
+          
+      
+        
+          
+      
+        
+          
+      
+        
+          
+      
+        
+          
+      
+        
+          
+      
+        
+          
+      
+        
+          
+      
+        
+          
+      
+        
+          
+      
+        
+          
+      
+        
+          
+      
+        
+          
+      
+        
+          
+      
+        
+          
+      
+        
+          
+      
+        
+          
+      
+        
+          
+      
+        
+          
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+</table>
+
+    </article>
+  </div>
+</div>
+<div role="tabpanel" class="tab-pane" id="sources">
+  <!-- Count the non-empty sources (up to 5) -->
+
+
+
+
+
+</div>
+
+  
+  
+</div>
+
+
+  </div>
+</div>
+
+</div>
+
+
+<footer role="contentinfo">
+  <div class="container">
+    <div class="row">
+      <div class="col-xs-12">
+        <div id="footerLinks">
+          <ul>
+            <li><a href="https://open-sdg.org">បង្កើតឡើងដោយប្រើអេសភីអេសជី</a></li>
+            
+              <li>
+                
+                  <a href="mailto:my-email-address@example.com" target="_blank">ទាក់ទង​មក​ពួក​យើង</a>
+                
+                </li>
+              <li>
+                
+                  <a href="https://twitter.com/MyTwitterAccount" target="_blank">Twitter</a>
+                
+                </li>
+              <li>
+                
+                  <a href="https://facebook.com/MyFacebookAccount" target="_blank">ហ្វេសប៊ុក</a>
+                
+                </li>
+              <li>
+                <a href="/about/cookies-and-privacy/">ឃុកឃី</a>
+                
+                </li>
+              
+            
+            </ul>
+        </div>
+      </div>
+    </div>
+    
+  </div>
+</footer>
+
+<script src="https://code.jquery.com/jquery-3.4.1.min.js" integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous"></script>
+
+<script src="//maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+<script src="//cdn.datatables.net/1.10.16/js/jquery.dataTables.min.js"></script>
+<script src="//cdn.datatables.net/1.10.16/js/dataTables.bootstrap.min.js"></script>
+
+<script src="//cdn.datatables.net/fixedcolumns/3.2.3/js/dataTables.fixedColumns.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.20/lodash.min.js" integrity="sha512-90vH1Z83AJY9DmlWa8WkjkV79yfS2n2Oxhsi2dZbIv0nC4E6m5AbH8Nh156kkM7JePmqD6tcZsfad1ueoaovww==" crossorigin="anonymous"></script>
+
+<script src="//cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.3/Chart.bundle.min.js"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/patternomaly@1.3.2/dist/patternomaly.js"></script>
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/autotrack/2.4.1/autotrack.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.0.0-rc.3/dist/html2canvas.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.2/dist/FileSaver.min.js"></script>
+
+
+
+
+
+
+
+<script>translations['general'] = translations['general'] || {};
+    translations['general']['hide'] = 'លាក់';</script>
+
+<script>translations['search'] = translations['search'] || {};
+    translations['search']['search'] = 'ស្វែងរក';</script>
+
+<script src='/assets/js/sdg.js?v=20220801012725'></script>
+
+
+    
+    
+    <script src="/assets/js/custom.js?v=20220801012725"></script><script>
+    new indicatorInit();
+    new accessibilitySwitcher();
+</script>
+
+
+</body>
+</html>
+

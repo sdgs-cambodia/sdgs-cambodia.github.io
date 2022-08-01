@@ -1,0 +1,2055 @@
+<!DOCTYPE html>
+<html lang="km" class="no-js">
+    <head>
+        <meta charset="utf-8">
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/modernizr/2.8.3/modernizr.min.js"></script>
+        <script crossorigin="anonymous" src="https://polyfill.io/v3/polyfill.min.js?features=Promise%2CArray.prototype.forEach%2CString.prototype.includes%2CURLSearchParams%2CCustomEvent%2CArray.prototype.includes%2CArray.prototype.filter%2CArray.prototype.some%2CArray.prototype.find%2CArray.prototype.reduce%2CObject.assign%2CArray.isArray%2CObject.values%2CObject.entries%2CArray.from%2CSet%2CArray.prototype.findIndex"></script>
+<script crossorigin="anonymous" src="https://cdnjs.cloudflare.com/ajax/libs/javascript-canvas-to-blob/3.15.0/js/canvas-to-blob.min.js"></script>
+
+        <script>
+// This is where we initialise any global variables, namespaced in "opensdg".
+var opensdg = {
+
+  // A base URL for asynchronous calls to SDG data.
+  remoteDataBaseUrl: 'https://sustainabledevelopment-cambodia.github.io/prod-data/km',
+
+  chartConfigAlterations: [],
+  // A hook which can be used to modify the configuration for Chart.js.
+  chartConfigAlter: function(callback) {
+    this.chartConfigAlterations.push(callback);
+  },
+
+  tableConfigAlterations: [],
+  // A hook which can be used to modify the configuration for Datatables.
+  tableConfigAlter: function(callback) {
+    this.tableConfigAlterations.push(callback);
+  },
+
+  // A hook which can be replaced to alter whether/how the values that are
+  // displayed on indicator tables/graphs get rounded.
+  dataRounding: function(value) {
+    // Alterations go here.
+    return value;
+  },
+
+  // A hook which can be used to alter the data before it is displayed on charts/tables.
+  dataDisplayAlterations: [],
+  dataDisplayAlter: function(callback) {
+    this.dataDisplayAlterations.push(callback);
+  },
+
+  language: 'km',
+};
+
+// For backwards compatibility, some of these might need to be global.
+// @TODO: Remove these eventually.
+var remoteDataBaseUrl = opensdg.remoteDataBaseUrl;
+
+</script>
+
+        <script>
+// JavaScript container for translation data.
+var translations = {
+  //Javascript version of the "t" filter from jekyll-open-sdg-plugins.
+  t: function(key) {
+
+    if (!key || typeof key !== 'string') {
+      return '';
+    }
+
+    // The majority of uses of this function are to translate disaggregation
+    // data. To spare data providers of needing to enter "data." in front of
+    // their disaggregation data, we specifically look for that here.
+    if (typeof this.data === 'object' && this.data !== null && this.data[key]) {
+      return this.data[key];
+    }
+
+    var originalKey = key;
+    var drilled = this;
+    var levelsDrilled = 0;
+    var levels = key.split('.');
+
+    for (var level in levels) {
+      // If we have drilled down to soon, abort.
+      if (typeof drilled !== 'object') {
+        break;
+      }
+
+      if (levels[level] in drilled) {
+        drilled = drilled[levels[level]];
+        levelsDrilled += 1;
+      }
+    }
+
+    // If we didn't drill the right number of levels, return the original string.
+    if (levels.length != levelsDrilled) {
+      return originalKey;
+    }
+
+    // Otherwise we must have drilled all the way.
+    return drilled;
+  },
+};
+</script>
+
+        <!-- Basic Page Needs
+        ================================================== -->
+        <meta http-equiv="X-UA-Compatible" content="IE=edge"><!-- Mobile Specific Metas
+        ================================================== -->
+        <meta name="HandheldFriendly" content="True">
+        <meta name="MobileOptimized" content="320">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <!-- Title and meta description
+        ================================================== -->
+
+        
+    <title>
+        
+        សូចនាករ 10.1.1 -
+        
+        អត្រាកំណើននៃការចំណាយក្នុងគ្រួសារឬប្រាក់ចំណូលសម្រាប់មនុស្សម្នាក់ក្នុងចំណោមបាត ៤០ ភាគរយនៃប្រជាជននិងប្រជាជនសរុប - Indicators For The Sustainable Development Goals
+    </title>
+
+
+
+        <meta name="description" content="">
+        <meta property="og:description" content="">
+        
+        <link rel="canonical" href="/">
+
+        <!--[if IE 9]>
+        <script src="/assets/js/lib/classList.js"></script>
+        <![endif]-->
+
+        
+
+
+
+
+<link rel="shortcut icon" type="image/ico" href="/assets/img/favicons/favicon.ico">
+<link rel="icon" type="image/png" href="/assets/img/favicons/favicon.png">
+
+
+        
+        
+        <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css" crossorigin="">
+        
+        <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css" crossorigin="">
+        <link rel="stylesheet" href="https://cdn.datatables.net/fixedcolumns/3.2.3/css/fixedColumns.dataTables.min.css" crossorigin="">
+        <link rel="stylesheet" href="/assets/css/style.css?v=20220801012725">
+        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.3.4/dist/leaflet.css"
+          integrity="sha512-puBpdR0798OZvTTbP4A8Ix/l+A4dHDD0DGqYW6RQ+9jxkRFclaxxQb/SJAWZfWAkuyeQUytO7+7N4QKrDh+drA=="
+          crossorigin=""/>
+        <link rel="stylesheet" href="https://cdn.rawgit.com/socib/Leaflet.TimeDimension/master/dist/leaflet.timedimension.control.min.css"  crossorigin=""/>
+        <link rel="stylesheet" href='https://api.mapbox.com/mapbox.js/plugins/leaflet-fullscreen/v1.0.1/leaflet.fullscreen.css'  crossorigin=""/>
+        <link rel="stylesheet" href="https://bowercdn.net/c/leaflet.zoomhome-latest/dist/leaflet.zoomhome.css"  crossorigin=""/>
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet-search@2.9.7/dist/leaflet-search.min.css" crossorigin="">
+        <link rel="stylesheet" href="https://cdn.kiprotect.com/klaro/v0.7/klaro.min.css" crossorigin=""/>
+        
+
+        <link rel="preconnect" href="https://fonts.gstatic.com">
+<link href="https://fonts.googleapis.com/css2?family=Khmer&display=swap" rel="stylesheet">
+
+    </head>
+<body class="language-km
+layout-indicator
+">
+<!-- <div class="container"> -->
+
+
+
+<script>translations['header'] = {"alpha":"អាល់ហ្វា","default_contrast":"កម្រិតពណ៌លំនាំដើម","disable_high_contrast":"បិទដំណើរការកម្រិតពណ៌ខ្ពស់","disclaimer":"នេះគឺជាគេហទំព័រអភិវឌ្ឍន៍។ យើងសូមស្វាគមន៍រាល់មតិប្រតិកម្មរបស់អ្នក [៤៧] [៨៧] ។","enable_high_contrast":"បើកដំណើរការកម្រិតពណ៌ខ្ពស់","high_contrast":"កម្រិត​ពណ៌​ខ្ពស់","skip_link":"រំលងទៅមាតិកាមេ","tag_line":"គោលដៅចំនួន ១៧ ដើម្បីបំរែបំរួលពិភពលោករបស់យើង","toggle_menu":"បិទ / បើកម៉ឺនុយ។ ចុចដើម្បីពង្រីកឬបង្រួមម៉ឺនុយ។","toggle_search":"ស្វែងរកបិទ / បើក។ ចុចដើម្បីពង្រីកឬបង្រួមរបារស្វែងរក។"};</script>
+
+<a class="sr-only sr-only-focusable" id="skiplink" href="#main-content" tabindex="0">រំលងទៅមាតិកាមេ</a>
+<div id="disclaimer">
+  
+<div class="container">
+  <div class="disclaimer-alert">
+    <strong class="phase-tag">អាល់ហ្វា</strong>
+    
+    នេះគឺជាគេហទំព័រអភិវឌ្ឍន៍។ យើងសូមស្វាគមន៍រាល់មតិប្រតិកម្មរបស់អ្នក [៤៧] [៨៧] ។
+    
+  </div>
+</div>
+
+</div>
+
+<header role="banner" class="header-menu-left-aligned">
+  <div class="container">
+
+    <div class="logo-and-mobile-widgets">
+      <a class="navbar-brand" href="/" id="home">
+    <img src="/assets/img/km-logo.png" alt="ព្រះរាជាណាចក្រកម្ពុជា ក្រសួងផែនការ វិទ្យាស្ថានជាតិស្ថិតិ" />
+</a>
+      <div class="mobile-widgets">
+    <ul id='accessibility-nav' class='contrast-switcher'>
+        
+
+    <li class="nav-link contrast contrast-default contrast-type-default">
+        <a title="បិទដំណើរការកម្រិតពណ៌ខ្ពស់"
+           aria-label="បិទដំណើរការកម្រិតពណ៌ខ្ពស់"
+           data-contrast-switch-to="default"
+           href="javascript:void(0)"
+           data-on="click"
+data-event-category="Accessibility"
+data-event-action="Change contrast setting"
+data-event-label="default"
+
+        >A</a>
+    </li>
+    <li class="nav-link contrast contrast-high contrast-type-default">
+        <a title="បើកដំណើរការកម្រិតពណ៌ខ្ពស់"
+           aria-label="បើកដំណើរការកម្រិតពណ៌ខ្ពស់"
+           data-contrast-switch-to="high"
+           href="javascript:void(0)"
+           data-on="click"
+data-event-category="Accessibility"
+data-event-action="Change contrast setting"
+data-event-label="high"
+
+        >A</a>
+    </li>
+
+
+    </ul><div class="language-toggle-mobile">
+        <div class="language-toggle-container">
+  
+  <div class="btn-group language-toggle-dropdown ">
+    <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+      <span class="language-globe-in-dropdown"><i class="fa fa-globe language-toggle-globe-dropdown"></i></span><span class="language-name">ភាសាខ្មែរ</span>
+      <span class="language-abbreviation">km</span><i class="language-toggle-caret fa fa-chevron-down"></i></button>
+    <ul class="dropdown-menu"><li class="language-option-en">
+            <a href="/en/10-1-1/">
+              English
+            </a>
+          </li></ul>
+  </div>
+</div>
+
+    </div></div>
+    </div>
+
+    <div class="search-and-desktop-widgets">
+      <div id="search" class="menu-target">
+  <form action="/search/">
+    <label class="sr-only" for="indicator_search">ស្វែងរក</label>
+    <input type="text" name="q" id="indicator_search" title="ស្វែងរក" /><!--
+    --><button aria-label="ស្វែងរក" id="search-btn" type="submit"><i class="fa fa-search" aria-hidden="false"></i></button>
+  </form>
+</div>
+
+      <div class="navbar navbar-default widgets-without-menu">
+        <ul class="nav navbar-nav contrast-switcher"><li class="language-toggle-menu-header">
+            
+
+
+
+
+
+  <div class="language-toggle-container">
+  <i class="fa fa-globe language-toggle-globe-links"></i>
+  <ul class="language-toggle-links"><li class="language-option-en">
+      <a class="language-toggle-link" href="/en/10-1-1/"><span class="language-name">English</span>
+        <span class="language-abbreviation">en</span></a>
+    </li></ul>
+</div>
+
+
+
+        </li>
+
+    <li class="nav-link contrast contrast-default contrast-type-default">
+        <a title="បិទដំណើរការកម្រិតពណ៌ខ្ពស់"
+           aria-label="បិទដំណើរការកម្រិតពណ៌ខ្ពស់"
+           data-contrast-switch-to="default"
+           href="javascript:void(0)"
+           data-on="click"
+data-event-category="Accessibility"
+data-event-action="Change contrast setting"
+data-event-label="default"
+
+        >A</a>
+    </li>
+    <li class="nav-link contrast contrast-high contrast-type-default">
+        <a title="បើកដំណើរការកម្រិតពណ៌ខ្ពស់"
+           aria-label="បើកដំណើរការកម្រិតពណ៌ខ្ពស់"
+           data-contrast-switch-to="high"
+           href="javascript:void(0)"
+           data-on="click"
+data-event-category="Accessibility"
+data-event-action="Change contrast setting"
+data-event-label="high"
+
+        >A</a>
+    </li>
+
+
+        </ul>
+      </div>
+    </div>
+
+    <div class="navbar navbar-default menu-without-widgets" id="main-nav">
+      <ul class="top-level">
+    <li id="menuToggle"
+        aria-label="បិទ / បើកម៉ឺនុយ។ ចុចដើម្បីពង្រីកឬបង្រួមម៉ឺនុយ។"
+        aria-haspopup="true">
+        <button data-target="menu-mobile" aria-expanded="false">មឺនុយ</button>
+        <ul class="nav navbar-nav menu-target contrast-switcher" id="menu-mobile"><li class="nav-link ">
+    <a href="/goals">គោលដៅ</a>
+</li><li class="nav-link ">
+    <a href="/reporting-status">ស្ថានភាពរបាយការណ៍</a>
+</li><li class="nav-link ">
+    <a href="/about">អំពី</a>
+</li><li class="nav-link ">
+    <a href="/guidance">ការណែនាំ</a>
+</li><li class="nav-link ">
+    <a href="/faq">សំណួរគេសួរញឹកញាប់</a>
+</li><li class="nav-link ">
+    <a href="/news">បច្ចុប្បន្នភាព</a>
+</li><li class="language-toggle-menu-header">
+    
+
+
+
+
+
+  <div class="language-toggle-container">
+  <i class="fa fa-globe language-toggle-globe-links"></i>
+  <ul class="language-toggle-links"><li class="language-option-en">
+      <a class="language-toggle-link" href="/en/10-1-1/"><span class="language-name">English</span>
+        <span class="language-abbreviation">en</span></a>
+    </li></ul>
+</div>
+
+
+
+</li>
+
+
+
+    <li class="nav-link contrast contrast-default contrast-type-default">
+        <a title="បិទដំណើរការកម្រិតពណ៌ខ្ពស់"
+           aria-label="បិទដំណើរការកម្រិតពណ៌ខ្ពស់"
+           data-contrast-switch-to="default"
+           href="javascript:void(0)"
+           data-on="click"
+data-event-category="Accessibility"
+data-event-action="Change contrast setting"
+data-event-label="default"
+
+        >A</a>
+    </li>
+    <li class="nav-link contrast contrast-high contrast-type-default">
+        <a title="បើកដំណើរការកម្រិតពណ៌ខ្ពស់"
+           aria-label="បើកដំណើរការកម្រិតពណ៌ខ្ពស់"
+           data-contrast-switch-to="high"
+           href="javascript:void(0)"
+           data-on="click"
+data-event-category="Accessibility"
+data-event-action="Change contrast setting"
+data-event-label="high"
+
+        >A</a>
+    </li>
+
+
+
+</ul>
+
+    </li>
+    <li id="searchToggle"
+        aria-label="ស្វែងរកបិទ / បើក។ ចុចដើម្បីពង្រីកឬបង្រួមរបារស្វែងរក។"
+        aria-haspopup="true">
+        <button data-target="search-mobile" aria-expanded="false">ស្វែងរក</button>
+        <div id="search-mobile" class="menu-target">
+  <form action="/search/">
+    <label class="sr-only" for="indicator_search-mobile">ស្វែងរក</label>
+    <input type="text" name="q" id="indicator_search-mobile" title="ស្វែងរក" /><!--
+    --><button aria-label="ស្វែងរក" id="search-mobile-btn" type="submit"><i class="fa fa-search" aria-hidden="false"></i></button>
+  </form>
+</div>
+
+    </li>
+</ul>
+      <ul class="nav navbar-nav menu-target " id="menu"><li class="nav-link ">
+    <a href="/goals">គោលដៅ</a>
+</li><li class="nav-link ">
+    <a href="/reporting-status">ស្ថានភាពរបាយការណ៍</a>
+</li><li class="nav-link ">
+    <a href="/about">អំពី</a>
+</li><li class="nav-link ">
+    <a href="/guidance">ការណែនាំ</a>
+</li><li class="nav-link ">
+    <a href="/faq">សំណួរគេសួរញឹកញាប់</a>
+</li><li class="nav-link ">
+    <a href="/news">បច្ចុប្បន្នភាព</a>
+</li>
+
+</ul>
+
+    </div>
+
+  </div>
+
+</header>
+<div id="top" tabindex=-1></div>
+
+
+
+
+
+<script type="text/template" id="item_template">
+  <% _.each(fields, function(fieldItem) { %>
+    <div class="variable-selector
+      <% if(allowedFields.indexOf(fieldItem.field) == -1) { %> disallowed <% }%>
+      <% if (typeof childFields !== 'undefined' && childFields.indexOf(fieldItem.field) !== -1) { %> child <% }%>
+      <% // @deprecated start %>
+      <% if (typeof childFields === 'undefined' && allowedFields.indexOf(fieldItem.field) == -1) { %> child <% }%>
+      <% // @deprecated end %>
+      "
+      data-field="<%=fieldItem.field%>"
+    >
+      <button class='accessBtn' tabindex='0' aria-expanded='false'
+        <% if(allowedFields.indexOf(fieldItem.field) == -1) { %>
+        aria-describedby='variable-hint-<%=fieldItem.field.replace(/ /g, '-')%>'
+        <% }%>
+      >
+        <% if(allowedFields.indexOf(fieldItem.field) == -1) { %><h6><% } else { %><h5><% } %>
+          <span aria-hidden="true"><%=translations.t(fieldItem.label)%><i class="fa fa-chevron-down"></i></span>
+          <span class="sr-only">បង្ហាញប្រភេទរង៖ <%=translations.t(fieldItem.label)%></span>
+        <% if(allowedFields.indexOf(fieldItem.field) == -1) { %></h6><% } else { %></h5><% } %>
+      </button>
+      <div class="variable-options">
+        <fieldset>
+          <legend class="sr-only">ប្រភេទរង - <%=translations.t(fieldItem.field)%></legend>
+          <div>
+            <button data-type="select">ជ្រើសយកទាំងអស់</button>
+            <button data-type="clear">លុបចេញ​ទាំងអស់</button>
+          </div>
+          <% _.each(fieldItem.values, function(item) { %>
+            <label>
+              <input type="checkbox" <%=item.checked ? 'checked' : ''%> value="<%=item.value%>" data-field="<%=fieldItem.field%>" /><%=translations.t(item.value)%>
+            </label>
+          <% }); %>
+        </fieldset>
+      </div>
+
+      <% if(allowedFields.indexOf(fieldItem.field) == -1) { %>
+        <div class="variable-hint" id="variable-hint-<%=fieldItem.field.replace(/ /g, '-')%>">អាចប្រើបាននៅពេល '% field' ត្រូវបានជ្រើសរើស
+        </div>
+        <div class="no-data-hint" id="no-data-hint-<%=fieldItem.field.replace(/ /g, '-')%>">
+          មិនមានជំរើសទេដោយសារត្រងខាងលើ
+        </div>
+      <% }%>
+
+    </div>
+  <% }); %>
+</script>
+
+<script type="text/template" id="units_template">
+  
+    <h4>ឯកតារង្វាស់</h4>
+    <fieldset>
+      <legend class="sr-only">ឯកតារង្វាស់</legend>
+      <% _.each(units, function(unitsItem, index) { %>
+        <% var checked = (selectedUnit) ? (selectedUnit==unitsItem) : (index==0); %>
+        <label><input type="radio" name="unit" value="<%=unitsItem%>" tabindex=0 <%=checked ? 'checked' : ''%> /> <%=translations.t(unitsItem)%></label>
+      <% }); %>
+    </fieldset>
+  
+</script>
+
+<script type="text/template" id="series_template">
+  
+    <h4>ស៊េរី</h4>
+    <fieldset>
+      <legend class="sr-only">ស៊េរី</legend>
+      <% _.each(serieses, function(seriesItem, index) { %>
+        <% var checked = (selectedSeries) ? (selectedSeries==seriesItem) : (index==0); %>
+        <label><input type="radio" name="series" value="<%=seriesItem%>" tabindex=0 <%=checked ? 'checked' : ''%> /> <%=translations.t(seriesItem)%></label>
+      <% }); %>
+    </fieldset>
+  
+</script>
+
+<script>translations['indicator'] = {"annotation_2030_target":"គោលដៅ ២០៣០","announce_data_added":"តារាងនិងតារាងត្រូវបានធ្វើបច្ចុប្បន្នភាពដើម្បីបញ្ចូលទិន្នន័យ។","announce_data_not_available":"តារាងនិងតារាងបង្ហាញទិន្នន័យ។","announce_data_removed":"តារាងនិងតារាងត្រូវបានធ្វើបច្ចុប្បន្នភាពដើម្បីមិនរាប់បញ្ចូលទិន្នន័យ។","chart":"គំនូសតាង","chart_annotation":"ចំណារពន្យល់គំនូសតាង","clear_all":"លុបចេញ​ទាំងអស់","clear_selections":"ការជ្រើសរើសច្បាស់","data_keyboard_navigation":"ចុចបញ្ចូលដើម្បីរកចំណុចទិន្នន័យដោយប្រើព្រួញឆ្វេងនិងស្តាំ។","data_not_available":"ទិន្នន័យនេះមិនមានទេ។ សូមជ្រើសរើសទិន្នន័យជំនួសដើម្បីបង្ហាញ។","data_tabular_alternative":"សម្រាប់ជម្រើសទិន្នន័យថេបសូមមើលផ្ទាំងតារាង។","dataset_size_warning":"មានសំណុំទិន្នន័យច្រើនពេកដើម្បីបង្ហាញនៅលើតារាង។ មិនមែនទាំងអស់នឹងត្រូវបានបង្ហាញរហូតដល់អ្នកដកជម្រើសមួយចំនួនចេញ។","download_chart":"ទាញយកតារាង CSV","download_chart_image":"ទាញយករូបភាពគំនូសតាង","download_chart_image_title":"ទាញយកគំនូសតាងជារូបភាព","download_csv":"ទាញយកស៊ីអេសវី","download_csv_title":"ទាញយកជាស៊ីអេសអេស","download_geojson":"ទាញយក GeoJSON","download_geojson_title":"ទាញយកជា GeoJSON","download_headline":"ទាញយកចំណងជើងស៊ីអេសអេស","download_headline_title":"ទាញយកទិន្នន័យចំណងជើងជា CSV","download_source":"ទាញយកប្រភពស៊ីអេសអេស","download_source_sdmx":"ទាញយកប្រភព SDMX","download_source_sdmx_title":"ទាញយកទិន្នន័យប្រភពជា SDMX","download_source_title":"ទាញយកទិន្នន័យប្រភពជាស៊ីអេសអេស","download_table":"ទាញយកតារាង CSV","edit":"កែប្រែ","edit_configuration":"កែសម្រួលការកំណត់រចនាសម្ព័ន្ធ","edit_data":"កែទិន្នន័យ","edit_metadata":"កែសម្រួលទិន្នន័យមេតាតា","footnote":"លេខយោង","geographical_area":"តំបន់ភូមិសាស្ត្រ","global_metadata":"ទិន្នន័យមេតាសកល","global_metadata_blurb":"តារាងនេះផ្តល់ព័ត៌មានអំពីទិន្នន័យមេតាសម្រាប់សូចនាករអេសជីជីដែលបានកំណត់ដោយគណៈកម្មការស្ថិតិរបស់អង្គការសហប្រជាជាតិ។ [១០៨] ទិន្នន័យមេតាសកលពេញលេញ [១៨០] ត្រូវបានផ្គត់ផ្គង់ដោយផ្នែកស្ថិតិរបស់អង្គការសហប្រជាជាតិ។","legend_help":"ចុចលើតាងដើម្បីយកបន្ទាត់នីមួយៗចេញពីតារាង។","loading":"កំពុងតម្លើង","loading_map":"កំពុងផ្ទុកផែនទី","map":"ផែនទី","map_search":"ស្វែងរក","map_search_hide":"លាក់ការស្វែងរក","map_search_show":"បង្ហាញការស្វែងរក","map_year_slider":"រំកិលឆ្នាំ","national_metadata":"ម៉េតាទិន្នន័យថ្នាក់ជាតិ","national_metadata_blurb":"តារាងនេះផ្តល់ទិន្នន័យមេតាសម្រាប់សូចនាករជាក់ស្តែងដែលអាចរកបានពីស្ថិតិ% country_name ដែលនៅជិតសូចនាករ SDG សកលដែលត្រូវគ្នា។ សូមកត់សម្គាល់ថាទោះបីជាសូចនាករអេសជីជីសកលអាចប្រើបានយ៉ាងពេញលេញពីស្ថិតិស្ថិតិប្រទេស% តារាងនេះគួរតែត្រូវបានពិគ្រោះយោបល់សម្រាប់ព័ត៌មានស្តីពីវិធីសាស្រ្តជាតិនិងព័ត៌មានមេតាដាតាផ្សេងទៀតដែលទាក់ទងនឹងប្រទេស% ។","next":"សូចនាករបន្ទាប់","no_data_hint":"មិនមានជំរើសទេដោយសារត្រងខាងលើ","plot_legend_description":"រឿងព្រេងដីឡូត៍៖ បញ្ជីនៃបន្ទាត់ដែលមានក្នុងតារាង","previous":"សូចនាករមុន","select_all":"ជ្រើសយកទាំងអស់","series":"ស៊េរី","series_help":"ជ្រើសរើសប្រភេទចេញពីបញ្ជីខាងក្រោមដើម្បីមើលការបំបែកទិន្នន័យផ្សេងៗគ្នា។ ខ្លះនឹងមិនមានទេរហូតដល់ថ្នាក់ខ្ពស់ត្រូវបានជ្រើសរើស។","source":"ប្រភព","sources":"ប្រភព","status":"ស្ថានភាពសូចនាករ","sub_categories":"ប្រភេទរង","sub_categories_show":"បង្ហាញប្រភេទរង៖","table":"តារាង","table_column_sort":"ចុចដើម្បីតម្រៀបតាមជួរឈរនេះ","tags":"ស្លាក","unit":"ឯកតា","unit_of_measurement":"ឯកតារង្វាស់","units_type":"ប្រភេទឯកតា","variable_hint":"អាចប្រើបាននៅពេល '% field' ត្រូវបានជ្រើសរើស","view_indicator_list":"មើលបញ្ជីសូចនាករគោលដៅរបស់គោលដៅនេះ"};</script>
+
+<script>translations['data'] = null;</script>
+
+
+<div class="container">
+  
+<ol class="breadcrumb">
+  
+  <li><a href="/">ទំព័រដើម</a></li>
+  <li><a href="/goals">គោលដៅ</a></li>
+  
+  <li><a href="/10" title="កាត់បន្ថយវិសមភាពនៅក្នុងនិងក្នុងចំណោមប្រទេស">គោលដៅ 10</a></li>
+  
+</ol>
+
+
+  
+</div>
+<div class="heading goal-banner indicator goal-10">
+  <div class="container">
+    <div class="row">
+      
+      <div class="col-xs-4 col-md-3 col-lg-2 goal-icon goal-tiles">
+        <a href="/10" title="មើលបញ្ជីសូចនាករគោលដៅរបស់គោលដៅនេះ">
+          <img src="/site/assets/img/goals/km/10.png" alt="កាត់បន្ថយវិសមភាព - គោលដៅ 10" id="goal-10" class="goal-icon-image goal-icon-image-"/>
+        </a>
+      </div>
+      <div class="col-xs-8 col-md-9 col-lg-10 indicator-details">
+      
+        <div>
+          <h1>
+            
+            សូចនាករ 10.1.1
+            
+            <span class="lead-copy">អត្រាកំណើននៃការចំណាយក្នុងគ្រួសារឬប្រាក់ចំណូលសម្រាប់មនុស្សម្នាក់ក្នុងចំណោមបាត ៤០ ភាគរយនៃប្រជាជននិងប្រជាជនសរុប</span>
+          </h1>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="main-content" class="container goal-10" role="main">
+  
+
+  
+
+  
+
+  
+
+
+  
+
+
+
+<div class="row"
+  id="indicatorData"
+  data-indicatorid='indicator_10-1-1'
+  data-id="10-1-1"
+  data-country="Cambodia"
+  data-charttitle="អត្រាកំណើននៃការចំណាយក្នុងគ្រួសារឬប្រាក់ចំណូលសម្រាប់មនុស្សម្នាក់ក្នុងចំណោមបាត ៤០ ភាគរយនៃប្រជាជននិងប្រជាជនសរុប"
+  data-charttitles="null"
+  data-measurementunit=""
+  data-xaxislabel=""
+  data-showdata="true"
+  data-graphtype="line"
+  data-graphtypes="null"
+  data-geocoderegex=""
+  data-showmap=""
+  data-startvalues="null"
+  data-graphlimits="null"
+  data-stackeddisaggregation=""
+  data-graphannotations="null"
+  data-graphtargetlines="null"
+  data-graphseriesbreaks="null"
+  data-indicatordownloads="null"
+  data-dataschema="{&quot;fields&quot;:[{&quot;name&quot;:&quot;GeoCode&quot;,&quot;type&quot;:&quot;number&quot;,&quot;title&quot;:&quot;GeoCode&quot;},{&quot;name&quot;:&quot;INCOME_WEALTH_QUANTILE&quot;,&quot;type&quot;:&quot;string&quot;,&quot;constraints&quot;:{&quot;enum&quot;:[&quot;&quot;,&quot;បាត ៤០%&quot;]},&quot;title&quot;:&quot;ប្រាក់ចំណូលឬទ្រព្យសម្បត្តិមានចំនួនច្រើន&quot;},{&quot;name&quot;:&quot;REF_AREA&quot;,&quot;type&quot;:&quot;number&quot;,&quot;constraints&quot;:{&quot;enum&quot;:[&quot;&quot;]},&quot;title&quot;:&quot;តំបន់យោង&quot;},{&quot;name&quot;:&quot;SERIES&quot;,&quot;type&quot;:&quot;string&quot;,&quot;title&quot;:&quot;ស៊េរីអេសជីជី&quot;},{&quot;name&quot;:&quot;UNIT_MEASURE&quot;,&quot;type&quot;:&quot;string&quot;,&quot;title&quot;:&quot;ឯកតារង្វាស់&quot;},{&quot;name&quot;:&quot;Value&quot;,&quot;type&quot;:&quot;number&quot;,&quot;title&quot;:&quot;Value&quot;},{&quot;name&quot;:&quot;Year&quot;,&quot;type&quot;:&quot;string&quot;,&quot;title&quot;:&quot;Year&quot;}]}"
+  data-compositebreakdownlabel=""
+  data-precision="null"
+>
+  
+  <span role="status" class="sr-only" id="indicator-data-view-status"></span>
+  <div id="indicator-sidebar" class="indicator-sidebar col-md-3">
+    <div id="serieses"></div>
+<div id="units"></div>
+<div id="toolbar">
+  <span id="series-help">
+    <h4>ប្រភេទរង</h4>
+    <p>ជ្រើសរើសប្រភេទចេញពីបញ្ជីខាងក្រោមដើម្បីមើលការបំបែកទិន្នន័យផ្សេងៗគ្នា។ ខ្លះនឹងមិនមានទេរហូតដល់ថ្នាក់ខ្ពស់ត្រូវបានជ្រើសរើស។</p>
+  </span>
+  <div id="fields">
+    <p class="async-loading" data-img="/assets/img/loading-small.gif"></p>
+  </div>
+</div>
+
+  </div>
+  <div id="indicator-main" class="indicator-main col-md-9">
+    
+
+
+<div id="headlineTable">
+
+  <div id="datatables">
+
+    <a href="https://sustainabledevelopment-cambodia.github.io/prod-data/km/headline/10-1-1.csv" class="btn btn-primary btn-download" download="indicator_10-1-1.csv" tabindex="0" role="button">ទាញយកចំណងជើងស៊ីអេសអេស</a>
+
+    <a href="https://sustainabledevelopment-cambodia.github.io/prod-data/km/data/10-1-1.csv" class="btn btn-primary btn-download" style='float:left;margin-right:1em' download='indicator_10-1-1.csv' tabindex='0' role='button'>ទាញយកប្រភពស៊ីអេសអេស</a>
+
+    <h3>Headline data</h3>
+    <table class="table-responsive table table-hover dataTable no-footer" role="grid">
+      <caption>អត្រាកំណើននៃការចំណាយក្នុងគ្រួសារឬប្រាក់ចំណូលសម្រាប់មនុស្សម្នាក់ក្នុងចំណោមបាត ៤០ ភាគរយនៃប្រជាជននិងប្រជាជនសរុប</caption>
+      <thead>
+        
+      </thead>
+      <tbody>
+        
+      </tbody>
+    </table>
+  </div>
+
+  <div id="datatableFooter">
+    
+    
+    
+    
+  </div>
+
+</div>
+
+
+<section>
+
+  <p class="async-loading" data-img="/assets/img/loading-small.gif"></p>
+
+  <div class="async-loaded spacer medium" style="display:none;">
+
+    <div style="display: none;">
+  <span id="table-alternative">សម្រាប់ជម្រើសទិន្នន័យថេបសូមមើលផ្ទាំងតារាង។</span>
+</div>
+<ul class="nav nav-tabs non-stacking-tabs data-view" role="tablist">
+  
+  <li role="presentation"
+    class="
+      nav-item
+      
+      
+      active
+    ">
+    <a
+      class="nav-link"
+      data-toggle="tab"
+      role="tab"
+      
+        id="tab-chartview"
+        href="#chartview"
+        aria-controls="chartview"
+        aria-describedby="table-alternative"
+        data-on="click"
+data-event-category="Tab change"
+data-event-action="Change data view"
+data-event-label="Change to Chart tab"
+
+      
+    >គំនូសតាង</a>
+  </li>
+  
+  <li role="presentation"
+    class="
+      nav-item
+      
+      
+      
+    ">
+    <a
+      class="nav-link"
+      data-toggle="tab"
+      role="tab"
+      
+        id="tab-tableview"
+        href="#tableview"
+        aria-controls="tableview"
+        data-on="click"
+data-event-category="Tab change"
+data-event-action="Change data view"
+data-event-label="Change to Table tab"
+
+      
+    >តារាង</a>
+  </li>
+  
+</ul>
+
+    <div class="tab-content data-view">
+  
+    
+      <div role="tabpanel" class="tab-pane active" id="chartview">
+        
+
+    <div id="dataset-size-warning" style="display:none" role="alert">
+      <i class="fa fa-bolt"><span class="sr-only">ការព្រមាន៖</span></i>
+      មានសំណុំទិន្នន័យច្រើនពេកដើម្បីបង្ហាញនៅលើតារាង។ មិនមែនទាំងអស់នឹងត្រូវបានបង្ហាញរហូតដល់អ្នកដកជម្រើសមួយចំនួនចេញ។
+    </div>
+
+    
+    
+    <div id="selectionsChart">
+      <figure role="group">
+        <div id="chart-canvas">
+          <h4 id="chart-heading" class="chart-title">អត្រាកំណើននៃការចំណាយក្នុងគ្រួសារឬប្រាក់ចំណូលសម្រាប់មនុស្សម្នាក់ក្នុងចំណោមបាត ៤០ ភាគរយនៃប្រជាជននិងប្រជាជនសរុប</h4>
+          <div id="chart" class="plot-container">
+            
+              
+<canvas
+    role="img"
+    aria-labelledby="chart-heading"
+    aria-describedby="table-alternative chart-annotations"
+    tabindex="0"
+ ></canvas>
+
+<script>
+// Add a chart alteration to support the chart_graph_limits metadata field.
+opensdg.chartConfigAlter(function(config, info) {
+  if (info.graphLimits && Object.keys(info.graphLimits).length > 0) {
+    var overrides = {
+      options: {
+        scales: {
+          yAxes: [{
+            ticks: {
+              min: info.graphLimits.minimum,
+              max: info.graphLimits.maximum,
+            }
+          }]
+        }
+      }
+    }
+    // Add these overrides onto the normal config.
+    $.extend(true, config, overrides);
+  }
+  else {
+    // Otherwise remove any min/max that may be there.
+    try {
+      delete config.options.scales.yAxes[0].ticks.min;
+      delete config.options.scales.yAxes[0].ticks.max;
+    }
+    catch(e) {}
+  }
+});
+</script>
+
+<span style="display: none;" id="chart-annotations" role="status"></span>
+<script>
+opensdg.annotationPresets = {
+    common: {
+        // This "common" preset is applied to all annotations automatically.
+        borderColor: '#949494',
+        type: 'line',
+        borderDash: [10, 5],
+        borderWidth: 1,
+        label: {
+            backgroundColor: 'white',
+            
+            fontColor: 'black',
+            
+        },
+        // This "highContrast" overrides colors when in high-contrast mode.
+        highContrast: {
+            label: {
+                backgroundColor: 'black',
+                
+                fontColor: 'white',
+                
+            },
+        },
+        // This callback is used to generate a generic description for screenreaders.
+        // This can be overridden to be a more specific string, eg:
+        //
+        //     description: 'Chart annotation showing a 2030 target of 15%'
+        //
+        description: function() {
+            var descriptionParts = [translations.indicator.chart_annotation];
+            if (this.label && this.label.content) {
+                descriptionParts.push(translations.t(this.label.content));
+            }
+            else {
+                // If there is no label, just specify whether it is a box or line.
+                if (this.type == 'line') {
+                    descriptionParts.push(this.mode + ' line');
+                }
+                if (this.type == 'box') {
+                    descriptionParts.push('box');
+                }
+            }
+            if (typeof this.value !== 'undefined') {
+                descriptionParts.push(this.value);
+            }
+            return descriptionParts.join(': ');
+        },
+    },
+    target_line: {
+        mode: 'horizontal',
+        borderWidth: 2,
+        borderDash: [15, 10],
+        borderColor: '#757575',
+        label: {
+            position: 'right',
+            content: translations.indicator.annotation_2030_target,
+        },
+    },
+    series_break: {
+        mode: 'vertical',
+        borderDash: [2, 2],
+        label: {
+            position: 'top',
+            content: translations.indicator.annotation_series_break,
+        },
+    },
+};
+
+// Add a chart alteration to support the chart_annotations metadata field.
+opensdg.chartConfigAlter(function(config, info) {
+    if (info.graphAnnotations && info.graphAnnotations.length > 0) {
+        // Apply some helpers/fixes to the annotations.
+        var annotations = info.graphAnnotations.map(function(annotationOverrides) {
+            var annotation = {};
+            // Apply the "common" preset.
+            if (opensdg.annotationPresets.common) {
+                $.extend(true, annotation, opensdg.annotationPresets.common);
+            }
+            // Apply any specified presets.
+            if (annotationOverrides.preset) {
+                var preset = annotationOverrides.preset;
+                if (opensdg.annotationPresets[preset]) {
+                    $.extend(true, annotation, opensdg.annotationPresets[preset]);
+                }
+            }
+            // Now add any more annotation config.
+            $.extend(true, annotation, annotationOverrides);
+            // Default to horizontal lines.
+            if (!annotation.mode && annotation.type === 'line') {
+                annotation.mode = 'horizontal';
+            }
+            // Provide the obscure scaleID properties on user's behalf.
+            if (!annotation.scaleID && annotation.type === 'line') {
+                if (annotation.mode === 'horizontal') {
+                    annotation.scaleID = 'y-axis-0';
+                }
+                if (annotation.mode === 'vertical') {
+                    annotation.scaleID = 'x-axis-0';
+                }
+            }
+            if (!annotation.xScaleID && annotation.type === 'box') {
+                annotation.xScaleID = 'x-axis-0';
+            }
+            if (!annotation.yScaleID && annotation.type === 'box') {
+                annotation.yScaleID = 'y-axis-0';
+            }
+            // Provide the "enabled" label property on the user's behalf.
+            if (annotation.label && annotation.label.content) {
+                annotation.label.enabled = true;
+            }
+            // Translate any label content.
+            if (annotation.label && annotation.label.content) {
+                annotation.label.content = translations.t(annotation.label.content);
+            }
+            // Save some original values for later used when contrast mode is switched.
+            if (typeof annotation.defaultContrast === 'undefined') {
+                annotation.defaultContrast = {};
+                if (annotation.borderColor) {
+                    annotation.defaultContrast.borderColor = annotation.borderColor;
+                }
+                if (annotation.backgroundColor) {
+                    annotation.defaultContrast.backgroundColor = annotation.backgroundColor;
+                }
+                if (annotation.label) {
+                    annotation.defaultContrast.label = {};
+                    if (annotation.label.fontColor) {
+                        annotation.defaultContrast.label.fontColor = annotation.label.fontColor;
+                    }
+                    if (annotation.label.backgroundColor) {
+                        annotation.defaultContrast.label.backgroundColor = annotation.label.backgroundColor;
+                    }
+                }
+            }
+            return annotation;
+        });
+        if (annotations.length > 0) {
+            var overrides = {
+                options: {
+                    annotation: {
+                        drawTime: 'beforeDatasetsDraw',
+                        annotations: annotations
+                    }
+                }
+            };
+            // Add these overrides onto the normal config.
+            $.extend(true, config, overrides);
+
+            // Update the chart annotations element.
+            var descriptions = annotations.map(function(annotation) {
+                var description = '';
+                if (annotation.description) {
+                    if (typeof annotation.description === 'function') {
+                        description = annotation.description.call(annotation);
+                    }
+                    else {
+                        description = translations.t(annotation.description);
+                    }
+                }
+                return description;
+            }).filter(function(description) { return description != ''; });
+
+            var currentDescription = $('#chart-annotations').text();
+            var newDescription = descriptions.join('. ');
+            if (currentDescription != newDescription) {
+                $('#chart-annotations').text(newDescription);
+            }
+        }
+    }
+    else if (config.options && config.options.annotation) {
+        delete config.options.annotation;
+    }
+});
+</script>
+
+<script>
+// For line charts, add the vertical line hover functionality.
+opensdg.chartConfigAlter(function(config, info) {
+    var overrides = {
+        options: {
+            tooltips: {
+                intersect: false,
+                axis: 'x',
+            },
+        },
+        plugins: [{
+            beforeDatasetsDraw: function(chart) {
+                if (chart.tooltip._active && chart.tooltip._active.length) {
+                    var activePoint = chart.tooltip._active[0],
+                        ctx = chart.ctx,
+                        x = activePoint.tooltipPosition().x,
+                        topY = chart.scales['y-axis-0'].top,
+                        bottomY = chart.scales['y-axis-0'].bottom;
+
+                    // draw line
+                    ctx.save();
+                    ctx.beginPath();
+                    ctx.moveTo(x, topY);
+                    ctx.lineTo(x, bottomY);
+                    ctx.lineWidth = 2;
+                    ctx.strokeStyle = '#757575';
+                    ctx.stroke();
+                    ctx.restore();
+                }
+            }
+        }],
+    };
+    // Add these overrides onto the normal config, and return it.
+    $.extend(true, config, overrides);
+});
+</script>
+
+            
+          </div>
+          <div id="plotLegend"></div>
+          
+
+
+
+<div id="selectionChartFooter" class="table-footer-text">
+  <h5 class="sr-only">Chart details</h5>
+    <dl>
+        
+
+        
+
+        <dt class="data-controlled-footer-field unit-from-data">ឯកតារង្វាស់:</dt>
+        <dd class="data-controlled-footer-field unit-from-data"></dd>
+
+        
+
+        
+
+        
+
+        
+        
+        <dt
+          class="data-controlled-footer-field"
+          data-ts-attribute="COMMENT_TS"
+        >លេខយោង:</dt>
+        <dd
+          class="data-controlled-footer-field"
+          data-ts-attribute="COMMENT_TS"
+        ></dd>
+        
+        <dt
+          class="data-controlled-footer-field"
+          data-ts-attribute="DATA_LAST_UPDATE"
+        >ទិន្នន័យបានធ្វើបច្ចុប្បន្នភាពចុងក្រោយ:</dt>
+        <dd
+          class="data-controlled-footer-field"
+          data-ts-attribute="DATA_LAST_UPDATE"
+        ></dd>
+        
+        
+    <dl>
+</div>
+
+        </div>
+      </figure>
+      <div id="chartSelectionDownload" class="clearfix">
+        <button id="btnSave" title="ទាញយកគំនូសតាងជារូបភាព" class='btn btn-primary btn-download'>
+          ទាញយករូបភាពគំនូសតាង
+        </button><!-- 
+   --></div>
+    </div>
+
+
+
+      </div>
+    
+  
+    
+      <div role="tabpanel" class="tab-pane " id="tableview">
+        <div style="display: none;">
+          <span id="column-sort-info">ចុចដើម្បីតម្រៀបតាមជួរឈរនេះ</span>
+        </div>
+        <div id="selectionsTable"></div>
+<dl id="tableTargetLines" class="clearfix"></dl>
+
+
+
+
+<div id="selectionTableFooter" class="table-footer-text">
+  <h5 class="sr-only">Chart details</h5>
+    <dl>
+        
+
+        
+
+        <dt class="data-controlled-footer-field unit-from-data">ឯកតារង្វាស់:</dt>
+        <dd class="data-controlled-footer-field unit-from-data"></dd>
+
+        
+
+        
+
+        
+
+        
+        
+        <dt
+          class="data-controlled-footer-field"
+          data-ts-attribute="COMMENT_TS"
+        >លេខយោង:</dt>
+        <dd
+          class="data-controlled-footer-field"
+          data-ts-attribute="COMMENT_TS"
+        ></dd>
+        
+        <dt
+          class="data-controlled-footer-field"
+          data-ts-attribute="DATA_LAST_UPDATE"
+        >ទិន្នន័យបានធ្វើបច្ចុប្បន្នភាពចុងក្រោយ:</dt>
+        <dd
+          class="data-controlled-footer-field"
+          data-ts-attribute="DATA_LAST_UPDATE"
+        ></dd>
+        
+        
+    <dl>
+</div>
+
+<div id="tableSelectionDownload" class="clearfix"></div>
+
+      </div>
+    
+  
+</div>
+
+
+  </div>
+
+</section>
+
+  
+  <ul class="nav nav-tabs spacer medium" role="tablist">
+
+  <li role="presentation" class="nav-item active">
+  <a class="nav-link" data-toggle="tab" id="tab-national" href="#national" aria-controls="national" role="tab" data-on="click"
+data-event-category="Tab change"
+data-event-action="Change metadata view"
+data-event-label="Change to National Metadata tab"
+>ម៉េតាទិន្នន័យថ្នាក់ជាតិ</a>
+</li>
+
+<li role="presentation" class="nav-item">
+  <a class="nav-link" data-toggle="tab" id="tab-global" href="#global" aria-controls="global" role="tab" data-on="click"
+data-event-category="Tab change"
+data-event-action="Change metadata view"
+data-event-label="Change to Global Metadata tab"
+>ទិន្នន័យមេតាសកល</a>
+</li>
+
+<li role="presentation" class="nav-item">
+  <a class="nav-link" data-toggle="tab" id="tab-sources" href="#sources" aria-controls="sources" role="tab" data-on="click"
+data-event-category="Tab change"
+data-event-action="Change metadata view"
+data-event-label="Change to Sources tab"
+>ប្រភព</a>
+</li>
+
+
+  
+</ul>
+
+<div class="tab-content">
+  
+    <div role="tabpanel" class="tab-pane active" id="national">
+  <!-- National Metadata -->
+  <div >
+    <article>
+      <p>
+        
+        
+        តារាងនេះផ្តល់ទិន្នន័យមេតាសម្រាប់សូចនាករជាក់ស្តែងដែលអាចរកបានពីស្ថិតិ% country_name ដែលនៅជិតសូចនាករ SDG សកលដែលត្រូវគ្នា។ សូមកត់សម្គាល់ថាទោះបីជាសូចនាករអេសជីជីសកលអាចប្រើបានយ៉ាងពេញលេញពីស្ថិតិស្ថិតិប្រទេស% តារាងនេះគួរតែត្រូវបានពិគ្រោះយោបល់សម្រាប់ព័ត៌មានស្តីពីវិធីសាស្រ្តជាតិនិងព័ត៌មានមេតាដាតាផ្សេងទៀតដែលទាក់ទងនឹងប្រទេស% ។
+      </p>
+      <table class="table">
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+      
+        
+          
+      
+        
+      
+      
+      <tr>
+        <th scope="row">គោលដៅ </th>
+        <td>
+          
+            <p> គោលដៅទី១០៖ កាត់បន្ថយភាព មិន ស្មើភាពក្នុង និងក្នុងចំណោមប្រទេស</p>
+
+          
+        </td>
+        </tr>
+        
+      
+  
+      
+        
+      
+      
+      <tr>
+        <th scope="row">គោលដៅ </th>
+        <td>
+          
+            <p> គោលដៅ ១០.១៖ នៅ ឆ្នាំ ២០៣០ សម្រេចបាន និង ទ្រទ្រង់ កំណើន ចំណូល បាត ៤០ ភាគរយ នៃ ប្រជាជន ក្នុង អត្រា ខ្ពស់ ជាង មធ្យម ថ្នាក់ ជាតិ </p>
+
+          
+        </td>
+        </tr>
+        
+      
+  
+      
+        
+      
+      
+      <tr>
+        <th scope="row">សូចនាករ </th>
+        <td>
+          
+            <p>10.1.1 អត្រាកំណើននៃ ការ ចំណាយ ក្នុង គ្រួសារ ឬ ចំណូល ក្នុង មួយ មនុស្ស ម្នាក់ [10.1.1] (SI_HEI_TOTL)</p>
+
+          
+        </td>
+        </tr>
+        
+      
+  
+      
+        
+          
+      
+        
+      
+      
+      <tr>
+        <th scope="row">ទិន្នន័យមេតាធ្វើបច្ចុប្បន្នភាព </th>
+        <td>
+          
+            <p> June 2020</p>
+
+          
+        </td>
+        </tr>
+        
+      
+  
+      
+        
+          
+      
+        
+          
+      
+        
+      
+      
+      <tr>
+        <th scope="row">អង្គការ </th>
+        <td>
+          
+            <p> វិទ្យាស្ថានជាតិស្ថិតិ (NIS)</p>
+
+          
+        </td>
+        </tr>
+        
+      
+  
+      
+        
+      
+      
+      <tr>
+        <th scope="row">អ្នកទំនាក់ទំនង </th>
+        <td>
+          
+            <p> Mr. Yim Saonith /Mr.Un Savin/ Mr. Sam Sok Sotheavuth</p>
+
+          
+        </td>
+        </tr>
+        
+      
+  
+      
+        
+      
+      
+      <tr>
+        <th scope="row">ទាក់ទងអង្គភាពអង្គភាព </th>
+        <td>
+          
+            <p> នាយកដ្ឋានគណនេយ្យជាតិ វិទ្យាស្ថានជាតិស្ថិតិ</p>
+
+          
+        </td>
+        </tr>
+        
+      
+  
+      
+        
+      
+      
+      <tr>
+        <th scope="row">មុខងារទាក់ទងមនុស្ស </th>
+        <td>
+          
+            <p> អនុប្រធាននាយកដ្ឋាន</p>
+
+          
+        </td>
+        </tr>
+        
+      
+  
+      
+        
+      
+      
+      <tr>
+        <th scope="row">ទូរស័ព្ទទំនាក់ទំនង </th>
+        <td>
+          
+            <p>+855 12 626 726 / 11 388 889</p>
+
+          
+        </td>
+        </tr>
+        
+      
+  
+      
+        
+      
+      
+      <tr>
+        <th scope="row">ទំនាក់ទំនងអ៊ីមែល </th>
+        <td>
+          
+            <p> No. 386 Street 360, Sangkat Boeung Kengkang I, Khan Chamkarmon, Phnom Penh, Cambodia. </p>
+
+          
+        </td>
+        </tr>
+        
+      
+  
+      
+        
+      
+      
+      <tr>
+        <th scope="row">អ៊ីមែលទំនាក់ទំនង </th>
+        <td>
+          
+            <p> <a href="mailto:saonith@gmail.com">saonith@gmail.com</a> / <a href="mailto:sotheavuth@gmail.com">sotheavuth@gmail.com</a></p>
+
+          
+        </td>
+        </tr>
+        
+      
+  
+      
+        
+          
+      
+        
+      
+      
+      <tr>
+        <th scope="row">និយមន័យនិងគំនិត </th>
+        <td>
+          
+            <p> អត្រា កំណើន នៃ សុខុមាលភាព សរុប ៤០% ត្រូវ បាន គណនា ជា អត្រា កំណើន មធ្យម ប្រចាំ ឆ្នាំ ក្នុង ចំណោម មនុស្ស ម្នាក់ ឬ ចំណូល នៃ ការ ចែក ចាយ ចំណូល បាត ៤០% នៅ ក្នុង ប្រទេស មួយ ពី ការ ស្ទង់ មតិ សេដ្ឋកិច្ច សង្គម កម្ពុជា (CSES) ក្នុង រយៈពេល ប្រហែល ២ ឆ្នាំ។ អត្រា កំណើន មធ្យម ថ្នាក់ ជាតិ ក្នុង វិស័យ សុខុមាលភាព ត្រូវ បាន គណនា ជា អត្រា កំណើន មធ្យម ប្រចាំ ឆ្នាំ ក្នុង ចំណោម មនុស្ស ម្នាក់ ឬ ចំណូល នៃ ចំនួន ប្រជាជន សរុប នៅ ក្នុង ប្រទេស មួយ ពី ការ ស្ទង់ មតិ សេដ្ឋកិច្ច សង្គម កម្ពុជា (CSES) ក្នុង រយៈពេល ប្រហែល ២ ឆ្នាំ។ </p>
+
+          
+        </td>
+        </tr>
+        
+      
+  
+      
+        
+      
+      
+      <tr>
+        <th scope="row">ឯកតារង្វាស់ </th>
+        <td>
+          
+            <p> ភាគរយ (%)</p>
+
+          
+        </td>
+        </tr>
+        
+      
+  
+      
+        
+          
+      
+        
+          
+      
+        
+      
+      
+      <tr>
+        <th scope="row">ប្រភពទិន្នន័យ </th>
+        <td>
+          
+            <p> ការស្ទង់មតិសេដ្ឋកិច្ចកម្ពុជា (CSES)</p>
+
+          
+        </td>
+        </tr>
+        
+      
+  
+      
+        
+      
+      
+      <tr>
+        <th scope="row">វិធីសាស្ត្រប្រមូលទិន្នន័យ </th>
+        <td>
+          
+            <p> CSES ត្រូវ បាន ធ្វើ ឡើង ដោយ NIS ចាប់ តាំង ពី ឆ្នាំ 1993 បន្ទាប់ មក នៅ ឆ្នាំ 1996, 1997, 1999, 2004 និង ធ្វើ ឡើង ជា រៀង រាល់ ឆ្នាំ ចាប់ ពី ឆ្នាំ 2007-2017 ។ ការ ស្ទង់ មតិ ចុង ក្រោយ គឺ នៅ ឆ្នាំ 2019 ។ ការ ស្ទង់ មតិ នេះ ផ្តល់ នូវ ការ ចង្អុល បង្ហាញ យ៉ាង ទូលំទូលាយ អំពី លក្ខខណ្ឌ រស់ នៅ នៅ ក្នុង ប្រទេស កម្ពុជា ដែល គ្រប ដណ្តប់ លើ ផ្នែក សង្គម សំខាន់ៗ ដូចជា ស្ថានភាព លំនៅឋាន សុខភាព ការ អប់រំ កម្លាំង ការងារ សកម្មភាព សេដ្ឋកិច្ច ការ រង គ្រោះ ខ្សោយ និង តំបន់ ផ្សេង ទៀត។ សំណួរ ស្ទង់ មតិ ត្រូវ បាន ស្នើ សុំ ឲ្យ គ្រួសារ និង សមាជិក គ្រួសារ ។ ទំហំ គំរូ ត្រូវ បាន កំណត់ សម្រាប់ CSES ប្រចាំ ឆ្នាំ គឺ ប្រហែល 3,600 គ្រួសារ ។ រៀង រាល់ 5 ឆ្នាំ វា ត្រូវ បាន ធ្វើ ឡើង ដោយ ទំហំ គំរូ ធំ មួយ គឺ ប្រហែល 12,000 គ្រួសារ ។ ការ ស្ទង់ មតិ គំរូ ធំ ៗ ចំនួន បួន ចុង ក្រោយ នេះ ត្រូវ បាន ធ្វើ ឡើង នៅ ឆ្នាំ 2004, 2009, 2014 និង 2019 ។ ទោះ ជា យ៉ាង ណា ក៏ ដោយ ការ ស្ទង់ មតិ គំរូ ដ៏ ធំ នេះ ត្រូវ បាន ធ្វើ ឡើង រៀង រាល់ ពីរ ឆ្នាំ ចាប់ ផ្តើម ពី ឆ្នាំ 2021 មក ។ </p>
+<p> ចាប់ តាំង ពី CSES 2004 វិធី សាស្ត្រ កំណត់ ប្រចាំ ថ្ងៃ សម្រាប់ ប្រមូល ទិន្នន័យ អំពី ការ ចំណាយ ក្នុង គ្រួសារ/ការ ប្រើប្រាស់ និង ចំណូល ក្នុង គ្រួសារ ត្រូវ បាន ណែនាំ។ ដោយសារ វិធី សាស្ត្រ ប្រមូល វិញ ត្រូវ បាន ប្រើប្រាស់ នៅ ក្នុង ជុំ មុន វា ក៏ ត្រូវ បាន សម្រេច ចិត្ត បញ្ចូល ទៅ ក្នុង ម៉ូឌុល ប្រមូល វិញ ផង ដែរ ។ តើ អ្នក នឹង ឆ្លើយ យ៉ាង ណា? ការ ប្រមូល ទិន្នន័យ ត្រូវ បាន ធ្វើ ឡើង ពេញ មួយ ឆ្នាំ ប្រតិទិន ទាំង មូល ដែល បាន ចាប់ ផ្តើម ពី ខែ មករា ដល់ ខែ ធ្នូ ។ ការ សម្ភាសន៍ ពី មុខ ដោយ ប្រើ សំណួរ ត្រូវ បាន ធ្វើ ឡើង ហើយ គ្រួសារ ប្រហែល 15 នាក់ ក្នុង មួយ ភូមិ ត្រូវ បាន ជ្រើស រើស ។  </p>
+<p> ឯកសារលម្អិតនៃការស្ទង់មតិដូចជាសំណួរបានដាក់ពាក្យប្រតិបត្តិការរបាយការណ៍ប្រចាំឆ្នាំ និងបច្ចេកទេសស្តីពីការរចនានិងការអនុវត្តការស្ទង់មតិ ត្រូវទុកនៅក្នុង NADA (National Data Archive), NIS website: <a href="http://nada-nis.gov.kh/index.php/home">http://nada-nis.gov.kh/index.php/home</a>។ </p>
+
+          
+        </td>
+        </tr>
+        
+      
+  
+      
+        
+      
+      
+      <tr>
+        <th scope="row">ប្រតិទិនប្រមូលទិន្នន័យ </th>
+        <td>
+          
+            <p> ការស្ទង់មតិ ជុំបន្ទាប់៖ Qrt1, 2021</p>
+
+          
+        </td>
+        </tr>
+        
+      
+  
+      
+        
+      
+      
+      <tr>
+        <th scope="row">ប្រតិទិនចេញផ្សាយទិន្នន័យ </th>
+        <td>
+          
+            <p> មួយឆ្នាំបន្ទាប់ពីការស្ទង់មតិ</p>
+
+          
+        </td>
+        </tr>
+        
+      
+  
+      
+        
+      
+      
+      <tr>
+        <th scope="row">អ្នកផ្តល់ទិន្នន័យ </th>
+        <td>
+          
+            <p> វិទ្យាស្ថានជាតិស្ថិតិ</p>
+
+          
+        </td>
+        </tr>
+        
+      
+  
+      
+        
+      
+      
+      <tr>
+        <th scope="row">អ្នកចងក្រងទិន្នន័យ </th>
+        <td>
+          
+            <p> វិទ្យាស្ថានជាតិស្ថិតិ</p>
+
+          
+        </td>
+        </tr>
+        
+      
+  
+      
+        
+      
+      
+      <tr>
+        <th scope="row">អាណត្តិស្ថាប័ន </th>
+        <td>
+          
+            <p> ដោយ សារ មាត្រា ១២ នៃ ច្បាប់ ស្តី ពី ស្ថិតិ NIS ទទួល ខុស ត្រូវ ចំពោះ :[៧៦]</p>
+<p>[៨៤]ប្រមូល ផ្សះ ចងក្រង ការ ចងក្រង ការ វិភាគ ការ បោះ ពុម្ព ផ្សាយ និង ផ្សព្វផ្សាយ ទិន្នន័យ មូលដ្ឋាន ដោយ ធ្វើ ជំរឿន និង ការ ស្ទង់ មតិ និង ប្រើប្រាស់ ប្រភព ទិន្នន័យ រដ្ឋ បាល។ &lt;/li&gt; &lt;li&gt; ការចងក្រងគណនីជាតិ និងសន្ទស្សន៍តម្លៃ ក៏ដូចជាការចង្អុលបង្ហាញផ្នែកសេដ្ឋកិច្ច បរិស្ថាន និងសង្គម។  &lt;/li&gt; &lt;li&gt; សម្រប សម្រួល ជាមួយ ក្រសួង បន្ទាត់ ជា អ្នក ផលិត ទិន្នន័យ ដូច ដែល បាន សន្មត ដោយ ច្បាប់ ស្ថិតិ ; និង[៤៧៥][៤៨០]មុខងារជា ឃ្លាំងកណ្តាលនៃ ការចង្អុលបង្ហាញ SDG។ &lt;/li&gt; &lt;/ul&gt;</p>
+
+          
+        </td>
+        </tr>
+        
+      
+  
+      
+        
+          
+      
+        
+          
+      
+        
+      
+      
+      <tr>
+        <th scope="row">យោបល់និងដែនកំណត់ </th>
+        <td>
+          
+            <p> ប្រៀបធៀប លទ្ធផល ពី CSES ឆ្នាំ ២០០៧ ជាមួយ នឹង ការ ស្ទង់ មតិ ពី មុន នៅ ឆ្នាំ ១៩៩៣/៩៤ ឆ្នាំ ១៩៩៦ ១៩៩៧ និង ១៩៩៩ មិន ត្រូវ បាន ផ្តល់ អនុសាសន៍ ដោយសារ តែ ភាព ខុស គ្នា ក្នុង ការ រចនា ការ ស្ទង់ មតិ នេះ ទេ។ វាលស្រែ ពី ការ ស្ទង់ មតិ ចំនួន ៥ លើក ចុង ក្រោយ (២០០៤, ២០០៧, ២០០៨, ២០០៩ និង ២០១០) បាន គ្រប ដណ្តប់ ១៥ ខែ ហើយ លទ្ធផល អាច ត្រូវ បាន រាយការណ៍ ទាំង ១២ ខែ (ឆ្នាំ ប្រតិទិន) និង ១៥ ខែ។ </p>
+<p> ទម្ងន់ ដែល បាន ប្រើ នៅ ក្នុង របាយការណ៍ ពី CSES 2004 ត្រូវ បាន កែ សម្រួល ដោយ ប្រើ ការ ប៉ាន់ ស្មាន ចំនួន ប្រជា ជន បឋម ដែល ផ្តល់ នូវ ចំនួន ប្រជា ជន ដែល បាន ប៉ាន់ ស្មាន លើស ពី ការ ប៉ាន់ ស្មាន ។ ទម្ងន់ នៅ ក្នុង CSES 2007 ត្រូវ បាន កែ សម្រួល ដោយ ប្រើ លទ្ធ ផល បឋម ពី ជំរឿន ប្រជា ជន ឆ្នាំ 2008 ។ ខេត្ត មួយ ចំនួន ត្រូវ បាន ដក ចេញ ដោយសារ តែ ការ ចំណាយ និង ហេតុ ផល ផ្សេង ទៀត នៅ ក្នុង គំរូ សម្រាប់ ឆ្នាំ 2007 ។ ទោះ ជា យ៉ាង ណា ក៏ ដោយ ការ ប៉ាន់ ស្មាន នេះ ត្រូវ បាន កែ សម្រួល សម្រាប់ កំហុស ក្រោម ការ គ្រប ដណ្តប់ ដែល បណ្តាល មក ពី ការ មិន រាប់ បញ្ចូល ខេត្ត ទាំង នោះ ។ ការ គណនា ឡើង វិញ នៃ ទម្ងន់ នៅ CSES ឆ្នាំ 2004 ត្រូវ បាន ធ្វើ ឡើង សម្រាប់ ការ វិភាគ ដែល នឹង មក ដល់ ដើម្បី ទទួល បាន ការ ប្រៀប ធៀប កាន់ តែ ខ្ពស់ រវាង CSES 2004 ហើយ ការ ស្ទង់ មតិ ដែល ធ្វើ ឡើង ពី ឆ្នាំ 2007 និង បន្ត ទៅ ទៀត ។ </p>
+
+          
+        </td>
+        </tr>
+        
+      
+  
+      
+        
+      
+      
+      <tr>
+        <th scope="row">វិធីនៃការគណនា </th>
+        <td>
+          
+            <p> កំណើន ប្រចាំ ឆ្នាំ នៃ ចំណូល ឬ ការ ប្រើប្រាស់ ពិត ប្រាកដ ក្នុង ចំណោម មនុស្ស ម្នាក់ ត្រូវ បាន គណនា ដោយ ការ ប៉ាន់ ស្មាន ជា លើក ដំបូង អំពី ចំណូល ពិត ប្រាកដ ក្នុង ចំណោម មនុស្ស ម្នាក់ ឬ ការ ប្រើប្រាស់ ដែល គណនា អត្រា កំណើន មធ្យម ប្រចាំ ឆ្នាំ ។ </p>
+
+          
+        </td>
+        </tr>
+        
+      
+  
+      
+        
+      
+      
+      <tr>
+        <th scope="row">សុពលភាព </th>
+        <td>
+          
+            <p> ដើម្បី តម្រឹម គំនិត និង និយម ន័យ ពិភព លោក ទំហំ គ្រួសារ ជា មធ្យម ដែល អនុវត្ត និង ចំនួន ប្រជា ជន សរុប ត្រូវ បាន ប្រើប្រាស់ ហើយ លទ្ធ ផល ជា ទូទៅ គឺ ដូច គ្នា នឹង វិធី សាស្ត្រ ដែល មាន មូលដ្ឋាន លើ គ្រួសារ ។ </p>
+
+          
+        </td>
+        </tr>
+        
+      
+  
+      
+        
+          
+      
+        
+      
+      
+      <tr>
+        <th scope="row">ការគ្រប់គ្រងគុណភាព </th>
+        <td>
+          
+            <p> NIS បាន សម្រេច ចិត្ត ប្រើប្រាស់ វិធី សាស្ត្រ ស្ថិតិ ( ការ ផ្លាស់ ប្តូរ ) ដើម្បី សម្រេច បាន នូវ ការ ប្រៀប ធៀប កាន់ តែ ប្រសើរ រវាង ជុំ ផ្សេង ៗ នៃ ការ ស្ទង់ មតិ CSES ដោយ កែ សម្រួល គំរូ ទៅ នឹង ទំហំ ប្រជា ជន និង រចនា សម្ព័ន្ធ ដែល ត្រូវ បាន បង្កើត ឡើង ដោយ ការ ធ្វើ ជំរឿន ប្រជា ជន ជាតិ ដែល បាន ធ្វើ ឡើង ក្នុង ឆ្នាំ 2008 ។ ដើម្បី ឆ្លុះ បញ្ចាំង ពី ការ ផ្លាស់ ប្តូរ យ៉ាង លឿន នៃ ចំនួន ប្រជា ជន វា បាន បង្ហាញ ថា ចាំបាច់ ក្នុង ការ គម្រោង ប្រជា ជន ឆ្ពោះ ទៅ មុខ រហូត ដល់ ឆ្នាំ 2017 និង ថយ ក្រោយ រហូត ដល់ ឆ្នាំ 1993 ដោយ ពិចារណា ពី ការ មាន កូន មរណ ភាព និង អត្រា អន្តោប្រវេសន៍ ខាង ក្នុង ។ </p>
+
+          
+        </td>
+        </tr>
+        
+      
+  
+      
+        
+          
+      
+        
+          
+      
+        
+      
+      
+      <tr>
+        <th scope="row">ភាពអាចរកបាននិងការបែងចែកទិន្នន័យ </th>
+        <td>
+          
+            <p> ទិន្នន័យ ដែល មាន ដោយ ទីតាំង ភូមិសាស្រ្ត ៖ ជាតិ ជនបទ និង ដោយ តំបន់ បរិស្ថាន ៖ បឹង តូណល សាប ផ្លាយ ឆ្នេរ សមុទ្រ និង ភ្នំ ។ </p>
+
+          
+        </td>
+        </tr>
+        
+      
+  
+      
+        
+          
+      
+        
+      
+      
+      <tr>
+        <th scope="row">ឯកសារយោងនិងឯកសារ </th>
+        <td>
+          
+            <p> Cambodia Socio-Economic Survey Reports: <a href="https://www.nis.gov.kh/index.php/km/14-cses/12-cambodia-socio-economic-survey-reports">https://www.nis.gov.kh/index.php/km/14-cses/12-cambodia-socio-economic-survey-reports</a></p>
+
+          
+        </td>
+        </tr>
+        
+      
+  
+      
+        
+          
+      
+        
+          
+      
+        
+          
+      
+        
+          
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+</table>
+
+    </article>
+  </div>
+</div>
+<div role="tabpanel" class="tab-pane" id="global">
+  <!-- Global Metadata -->
+  <div>
+    <article>
+      <p>តារាងនេះផ្តល់ព័ត៌មានអំពីទិន្នន័យមេតាសម្រាប់សូចនាករអេសជីជីដែលបានកំណត់ដោយគណៈកម្មការស្ថិតិរបស់អង្គការសហប្រជាជាតិ។ [១០៨] ទិន្នន័យមេតាសកលពេញលេញ [១៨០] ត្រូវបានផ្គត់ផ្គង់ដោយផ្នែកស្ថិតិរបស់អង្គការសហប្រជាជាតិ។</p>
+      <table class="table">
+  
+      
+        
+          
+      
+        
+          
+      
+        
+          
+      
+        
+          
+      
+        
+          
+      
+        
+          
+      
+        
+          
+      
+        
+          
+      
+        
+          
+      
+        
+          
+      
+        
+          
+      
+        
+          
+      
+        
+          
+      
+        
+          
+      
+        
+          
+      
+        
+          
+      
+        
+          
+      
+        
+          
+      
+        
+          
+      
+        
+          
+      
+        
+          
+      
+        
+          
+      
+        
+          
+      
+        
+          
+      
+        
+          
+      
+        
+          
+      
+        
+          
+      
+        
+          
+      
+        
+          
+      
+        
+          
+      
+        
+          
+      
+        
+          
+      
+        
+          
+      
+        
+          
+      
+        
+          
+      
+        
+          
+      
+        
+          
+      
+        
+          
+      
+        
+          
+      
+        
+          
+      
+        
+          
+      
+        
+          
+      
+        
+          
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+</table>
+
+    </article>
+  </div>
+</div>
+<div role="tabpanel" class="tab-pane" id="sources">
+  <!-- Count the non-empty sources (up to 5) -->
+
+
+
+
+
+</div>
+
+  
+  
+</div>
+
+
+  </div>
+</div>
+
+</div>
+
+
+<footer role="contentinfo">
+  <div class="container">
+    <div class="row">
+      <div class="col-xs-12">
+        <div id="footerLinks">
+          <ul>
+            <li><a href="https://open-sdg.org">បង្កើតឡើងដោយប្រើអេសភីអេសជី</a></li>
+            
+              <li>
+                
+                  <a href="mailto:my-email-address@example.com" target="_blank">ទាក់ទង​មក​ពួក​យើង</a>
+                
+                </li>
+              <li>
+                
+                  <a href="https://twitter.com/MyTwitterAccount" target="_blank">Twitter</a>
+                
+                </li>
+              <li>
+                
+                  <a href="https://facebook.com/MyFacebookAccount" target="_blank">ហ្វេសប៊ុក</a>
+                
+                </li>
+              <li>
+                <a href="/about/cookies-and-privacy/">ឃុកឃី</a>
+                
+                </li>
+              
+            
+            </ul>
+        </div>
+      </div>
+    </div>
+    
+  </div>
+</footer>
+
+<script src="https://code.jquery.com/jquery-3.4.1.min.js" integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous"></script>
+
+<script src="//maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+<script src="//cdn.datatables.net/1.10.16/js/jquery.dataTables.min.js"></script>
+<script src="//cdn.datatables.net/1.10.16/js/dataTables.bootstrap.min.js"></script>
+
+<script src="//cdn.datatables.net/fixedcolumns/3.2.3/js/dataTables.fixedColumns.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.20/lodash.min.js" integrity="sha512-90vH1Z83AJY9DmlWa8WkjkV79yfS2n2Oxhsi2dZbIv0nC4E6m5AbH8Nh156kkM7JePmqD6tcZsfad1ueoaovww==" crossorigin="anonymous"></script>
+
+<script src="//cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.3/Chart.bundle.min.js"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/patternomaly@1.3.2/dist/patternomaly.js"></script>
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/autotrack/2.4.1/autotrack.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.0.0-rc.3/dist/html2canvas.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.2/dist/FileSaver.min.js"></script>
+
+
+
+
+
+
+
+<script>translations['general'] = translations['general'] || {};
+    translations['general']['hide'] = 'លាក់';</script>
+
+<script>translations['search'] = translations['search'] || {};
+    translations['search']['search'] = 'ស្វែងរក';</script>
+
+<script src='/assets/js/sdg.js?v=20220801012725'></script>
+
+
+    
+    
+    <script src="/assets/js/custom.js?v=20220801012725"></script><script>
+    new indicatorInit();
+    new accessibilitySwitcher();
+</script>
+
+
+</body>
+</html>
+

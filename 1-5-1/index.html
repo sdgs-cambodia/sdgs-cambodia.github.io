@@ -1,0 +1,1587 @@
+<!DOCTYPE html>
+<html lang="km" class="no-js">
+    <head>
+        <meta charset="utf-8">
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/modernizr/2.8.3/modernizr.min.js"></script>
+        <script crossorigin="anonymous" src="https://polyfill.io/v3/polyfill.min.js?features=Promise%2CArray.prototype.forEach%2CString.prototype.includes%2CURLSearchParams%2CCustomEvent%2CArray.prototype.includes%2CArray.prototype.filter%2CArray.prototype.some%2CArray.prototype.find%2CArray.prototype.reduce%2CObject.assign%2CArray.isArray%2CObject.values%2CObject.entries%2CArray.from%2CSet%2CArray.prototype.findIndex"></script>
+<script crossorigin="anonymous" src="https://cdnjs.cloudflare.com/ajax/libs/javascript-canvas-to-blob/3.15.0/js/canvas-to-blob.min.js"></script>
+
+        <script>
+// This is where we initialise any global variables, namespaced in "opensdg".
+var opensdg = {
+
+  // A base URL for asynchronous calls to SDG data.
+  remoteDataBaseUrl: 'https://sustainabledevelopment-cambodia.github.io/prod-data/km',
+
+  chartConfigAlterations: [],
+  // A hook which can be used to modify the configuration for Chart.js.
+  chartConfigAlter: function(callback) {
+    this.chartConfigAlterations.push(callback);
+  },
+
+  tableConfigAlterations: [],
+  // A hook which can be used to modify the configuration for Datatables.
+  tableConfigAlter: function(callback) {
+    this.tableConfigAlterations.push(callback);
+  },
+
+  // A hook which can be replaced to alter whether/how the values that are
+  // displayed on indicator tables/graphs get rounded.
+  dataRounding: function(value) {
+    // Alterations go here.
+    return value;
+  },
+
+  // A hook which can be used to alter the data before it is displayed on charts/tables.
+  dataDisplayAlterations: [],
+  dataDisplayAlter: function(callback) {
+    this.dataDisplayAlterations.push(callback);
+  },
+
+  language: 'km',
+};
+
+// For backwards compatibility, some of these might need to be global.
+// @TODO: Remove these eventually.
+var remoteDataBaseUrl = opensdg.remoteDataBaseUrl;
+
+</script>
+
+        <script>
+// JavaScript container for translation data.
+var translations = {
+  //Javascript version of the "t" filter from jekyll-open-sdg-plugins.
+  t: function(key) {
+
+    if (!key || typeof key !== 'string') {
+      return '';
+    }
+
+    // The majority of uses of this function are to translate disaggregation
+    // data. To spare data providers of needing to enter "data." in front of
+    // their disaggregation data, we specifically look for that here.
+    if (typeof this.data === 'object' && this.data !== null && this.data[key]) {
+      return this.data[key];
+    }
+
+    var originalKey = key;
+    var drilled = this;
+    var levelsDrilled = 0;
+    var levels = key.split('.');
+
+    for (var level in levels) {
+      // If we have drilled down to soon, abort.
+      if (typeof drilled !== 'object') {
+        break;
+      }
+
+      if (levels[level] in drilled) {
+        drilled = drilled[levels[level]];
+        levelsDrilled += 1;
+      }
+    }
+
+    // If we didn't drill the right number of levels, return the original string.
+    if (levels.length != levelsDrilled) {
+      return originalKey;
+    }
+
+    // Otherwise we must have drilled all the way.
+    return drilled;
+  },
+};
+</script>
+
+        <!-- Basic Page Needs
+        ================================================== -->
+        <meta http-equiv="X-UA-Compatible" content="IE=edge"><!-- Mobile Specific Metas
+        ================================================== -->
+        <meta name="HandheldFriendly" content="True">
+        <meta name="MobileOptimized" content="320">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <!-- Title and meta description
+        ================================================== -->
+
+        
+    <title>
+        
+        សូចនាករ 1.5.1 -
+        
+        ចំនួនអ្នកស្លាប់បាត់ខ្លួននិងអ្នកដែលរងផលប៉ះពាល់ដោយផ្ទាល់បានបង្កឡើងដោយគ្រោះមហន្តរាយក្នុងចំនួនប្រជាជន ១០០.០០០ នាក់ - Indicators For The Sustainable Development Goals
+    </title>
+
+
+
+        <meta name="description" content="">
+        <meta property="og:description" content="">
+        
+        <link rel="canonical" href="/">
+
+        <!--[if IE 9]>
+        <script src="/assets/js/lib/classList.js"></script>
+        <![endif]-->
+
+        
+
+
+
+
+<link rel="shortcut icon" type="image/ico" href="/assets/img/favicons/favicon.ico">
+<link rel="icon" type="image/png" href="/assets/img/favicons/favicon.png">
+
+
+        
+        
+        <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css" crossorigin="">
+        
+        <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css" crossorigin="">
+        <link rel="stylesheet" href="https://cdn.datatables.net/fixedcolumns/3.2.3/css/fixedColumns.dataTables.min.css" crossorigin="">
+        <link rel="stylesheet" href="/assets/css/style.css?v=20220801012725">
+        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.3.4/dist/leaflet.css"
+          integrity="sha512-puBpdR0798OZvTTbP4A8Ix/l+A4dHDD0DGqYW6RQ+9jxkRFclaxxQb/SJAWZfWAkuyeQUytO7+7N4QKrDh+drA=="
+          crossorigin=""/>
+        <link rel="stylesheet" href="https://cdn.rawgit.com/socib/Leaflet.TimeDimension/master/dist/leaflet.timedimension.control.min.css"  crossorigin=""/>
+        <link rel="stylesheet" href='https://api.mapbox.com/mapbox.js/plugins/leaflet-fullscreen/v1.0.1/leaflet.fullscreen.css'  crossorigin=""/>
+        <link rel="stylesheet" href="https://bowercdn.net/c/leaflet.zoomhome-latest/dist/leaflet.zoomhome.css"  crossorigin=""/>
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet-search@2.9.7/dist/leaflet-search.min.css" crossorigin="">
+        <link rel="stylesheet" href="https://cdn.kiprotect.com/klaro/v0.7/klaro.min.css" crossorigin=""/>
+        
+
+        <link rel="preconnect" href="https://fonts.gstatic.com">
+<link href="https://fonts.googleapis.com/css2?family=Khmer&display=swap" rel="stylesheet">
+
+    </head>
+<body class="language-km
+layout-indicator
+">
+<!-- <div class="container"> -->
+
+
+
+<script>translations['header'] = {"alpha":"អាល់ហ្វា","default_contrast":"កម្រិតពណ៌លំនាំដើម","disable_high_contrast":"បិទដំណើរការកម្រិតពណ៌ខ្ពស់","disclaimer":"នេះគឺជាគេហទំព័រអភិវឌ្ឍន៍។ យើងសូមស្វាគមន៍រាល់មតិប្រតិកម្មរបស់អ្នក [៤៧] [៨៧] ។","enable_high_contrast":"បើកដំណើរការកម្រិតពណ៌ខ្ពស់","high_contrast":"កម្រិត​ពណ៌​ខ្ពស់","skip_link":"រំលងទៅមាតិកាមេ","tag_line":"គោលដៅចំនួន ១៧ ដើម្បីបំរែបំរួលពិភពលោករបស់យើង","toggle_menu":"បិទ / បើកម៉ឺនុយ។ ចុចដើម្បីពង្រីកឬបង្រួមម៉ឺនុយ។","toggle_search":"ស្វែងរកបិទ / បើក។ ចុចដើម្បីពង្រីកឬបង្រួមរបារស្វែងរក។"};</script>
+
+<a class="sr-only sr-only-focusable" id="skiplink" href="#main-content" tabindex="0">រំលងទៅមាតិកាមេ</a>
+<div id="disclaimer">
+  
+<div class="container">
+  <div class="disclaimer-alert">
+    <strong class="phase-tag">អាល់ហ្វា</strong>
+    
+    នេះគឺជាគេហទំព័រអភិវឌ្ឍន៍។ យើងសូមស្វាគមន៍រាល់មតិប្រតិកម្មរបស់អ្នក [៤៧] [៨៧] ។
+    
+  </div>
+</div>
+
+</div>
+
+<header role="banner" class="header-menu-left-aligned">
+  <div class="container">
+
+    <div class="logo-and-mobile-widgets">
+      <a class="navbar-brand" href="/" id="home">
+    <img src="/assets/img/km-logo.png" alt="ព្រះរាជាណាចក្រកម្ពុជា ក្រសួងផែនការ វិទ្យាស្ថានជាតិស្ថិតិ" />
+</a>
+      <div class="mobile-widgets">
+    <ul id='accessibility-nav' class='contrast-switcher'>
+        
+
+    <li class="nav-link contrast contrast-default contrast-type-default">
+        <a title="បិទដំណើរការកម្រិតពណ៌ខ្ពស់"
+           aria-label="បិទដំណើរការកម្រិតពណ៌ខ្ពស់"
+           data-contrast-switch-to="default"
+           href="javascript:void(0)"
+           data-on="click"
+data-event-category="Accessibility"
+data-event-action="Change contrast setting"
+data-event-label="default"
+
+        >A</a>
+    </li>
+    <li class="nav-link contrast contrast-high contrast-type-default">
+        <a title="បើកដំណើរការកម្រិតពណ៌ខ្ពស់"
+           aria-label="បើកដំណើរការកម្រិតពណ៌ខ្ពស់"
+           data-contrast-switch-to="high"
+           href="javascript:void(0)"
+           data-on="click"
+data-event-category="Accessibility"
+data-event-action="Change contrast setting"
+data-event-label="high"
+
+        >A</a>
+    </li>
+
+
+    </ul><div class="language-toggle-mobile">
+        <div class="language-toggle-container">
+  
+  <div class="btn-group language-toggle-dropdown ">
+    <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+      <span class="language-globe-in-dropdown"><i class="fa fa-globe language-toggle-globe-dropdown"></i></span><span class="language-name">ភាសាខ្មែរ</span>
+      <span class="language-abbreviation">km</span><i class="language-toggle-caret fa fa-chevron-down"></i></button>
+    <ul class="dropdown-menu"><li class="language-option-en">
+            <a href="/en/1-5-1/">
+              English
+            </a>
+          </li></ul>
+  </div>
+</div>
+
+    </div></div>
+    </div>
+
+    <div class="search-and-desktop-widgets">
+      <div id="search" class="menu-target">
+  <form action="/search/">
+    <label class="sr-only" for="indicator_search">ស្វែងរក</label>
+    <input type="text" name="q" id="indicator_search" title="ស្វែងរក" /><!--
+    --><button aria-label="ស្វែងរក" id="search-btn" type="submit"><i class="fa fa-search" aria-hidden="false"></i></button>
+  </form>
+</div>
+
+      <div class="navbar navbar-default widgets-without-menu">
+        <ul class="nav navbar-nav contrast-switcher"><li class="language-toggle-menu-header">
+            
+
+
+
+
+
+  <div class="language-toggle-container">
+  <i class="fa fa-globe language-toggle-globe-links"></i>
+  <ul class="language-toggle-links"><li class="language-option-en">
+      <a class="language-toggle-link" href="/en/1-5-1/"><span class="language-name">English</span>
+        <span class="language-abbreviation">en</span></a>
+    </li></ul>
+</div>
+
+
+
+        </li>
+
+    <li class="nav-link contrast contrast-default contrast-type-default">
+        <a title="បិទដំណើរការកម្រិតពណ៌ខ្ពស់"
+           aria-label="បិទដំណើរការកម្រិតពណ៌ខ្ពស់"
+           data-contrast-switch-to="default"
+           href="javascript:void(0)"
+           data-on="click"
+data-event-category="Accessibility"
+data-event-action="Change contrast setting"
+data-event-label="default"
+
+        >A</a>
+    </li>
+    <li class="nav-link contrast contrast-high contrast-type-default">
+        <a title="បើកដំណើរការកម្រិតពណ៌ខ្ពស់"
+           aria-label="បើកដំណើរការកម្រិតពណ៌ខ្ពស់"
+           data-contrast-switch-to="high"
+           href="javascript:void(0)"
+           data-on="click"
+data-event-category="Accessibility"
+data-event-action="Change contrast setting"
+data-event-label="high"
+
+        >A</a>
+    </li>
+
+
+        </ul>
+      </div>
+    </div>
+
+    <div class="navbar navbar-default menu-without-widgets" id="main-nav">
+      <ul class="top-level">
+    <li id="menuToggle"
+        aria-label="បិទ / បើកម៉ឺនុយ។ ចុចដើម្បីពង្រីកឬបង្រួមម៉ឺនុយ។"
+        aria-haspopup="true">
+        <button data-target="menu-mobile" aria-expanded="false">មឺនុយ</button>
+        <ul class="nav navbar-nav menu-target contrast-switcher" id="menu-mobile"><li class="nav-link ">
+    <a href="/goals">គោលដៅ</a>
+</li><li class="nav-link ">
+    <a href="/reporting-status">ស្ថានភាពរបាយការណ៍</a>
+</li><li class="nav-link ">
+    <a href="/about">អំពី</a>
+</li><li class="nav-link ">
+    <a href="/guidance">ការណែនាំ</a>
+</li><li class="nav-link ">
+    <a href="/faq">សំណួរគេសួរញឹកញាប់</a>
+</li><li class="nav-link ">
+    <a href="/news">បច្ចុប្បន្នភាព</a>
+</li><li class="language-toggle-menu-header">
+    
+
+
+
+
+
+  <div class="language-toggle-container">
+  <i class="fa fa-globe language-toggle-globe-links"></i>
+  <ul class="language-toggle-links"><li class="language-option-en">
+      <a class="language-toggle-link" href="/en/1-5-1/"><span class="language-name">English</span>
+        <span class="language-abbreviation">en</span></a>
+    </li></ul>
+</div>
+
+
+
+</li>
+
+
+
+    <li class="nav-link contrast contrast-default contrast-type-default">
+        <a title="បិទដំណើរការកម្រិតពណ៌ខ្ពស់"
+           aria-label="បិទដំណើរការកម្រិតពណ៌ខ្ពស់"
+           data-contrast-switch-to="default"
+           href="javascript:void(0)"
+           data-on="click"
+data-event-category="Accessibility"
+data-event-action="Change contrast setting"
+data-event-label="default"
+
+        >A</a>
+    </li>
+    <li class="nav-link contrast contrast-high contrast-type-default">
+        <a title="បើកដំណើរការកម្រិតពណ៌ខ្ពស់"
+           aria-label="បើកដំណើរការកម្រិតពណ៌ខ្ពស់"
+           data-contrast-switch-to="high"
+           href="javascript:void(0)"
+           data-on="click"
+data-event-category="Accessibility"
+data-event-action="Change contrast setting"
+data-event-label="high"
+
+        >A</a>
+    </li>
+
+
+
+</ul>
+
+    </li>
+    <li id="searchToggle"
+        aria-label="ស្វែងរកបិទ / បើក។ ចុចដើម្បីពង្រីកឬបង្រួមរបារស្វែងរក។"
+        aria-haspopup="true">
+        <button data-target="search-mobile" aria-expanded="false">ស្វែងរក</button>
+        <div id="search-mobile" class="menu-target">
+  <form action="/search/">
+    <label class="sr-only" for="indicator_search-mobile">ស្វែងរក</label>
+    <input type="text" name="q" id="indicator_search-mobile" title="ស្វែងរក" /><!--
+    --><button aria-label="ស្វែងរក" id="search-mobile-btn" type="submit"><i class="fa fa-search" aria-hidden="false"></i></button>
+  </form>
+</div>
+
+    </li>
+</ul>
+      <ul class="nav navbar-nav menu-target " id="menu"><li class="nav-link ">
+    <a href="/goals">គោលដៅ</a>
+</li><li class="nav-link ">
+    <a href="/reporting-status">ស្ថានភាពរបាយការណ៍</a>
+</li><li class="nav-link ">
+    <a href="/about">អំពី</a>
+</li><li class="nav-link ">
+    <a href="/guidance">ការណែនាំ</a>
+</li><li class="nav-link ">
+    <a href="/faq">សំណួរគេសួរញឹកញាប់</a>
+</li><li class="nav-link ">
+    <a href="/news">បច្ចុប្បន្នភាព</a>
+</li>
+
+</ul>
+
+    </div>
+
+  </div>
+
+</header>
+<div id="top" tabindex=-1></div>
+
+
+
+
+
+<script type="text/template" id="item_template">
+  <% _.each(fields, function(fieldItem) { %>
+    <div class="variable-selector
+      <% if(allowedFields.indexOf(fieldItem.field) == -1) { %> disallowed <% }%>
+      <% if (typeof childFields !== 'undefined' && childFields.indexOf(fieldItem.field) !== -1) { %> child <% }%>
+      <% // @deprecated start %>
+      <% if (typeof childFields === 'undefined' && allowedFields.indexOf(fieldItem.field) == -1) { %> child <% }%>
+      <% // @deprecated end %>
+      "
+      data-field="<%=fieldItem.field%>"
+    >
+      <button class='accessBtn' tabindex='0' aria-expanded='false'
+        <% if(allowedFields.indexOf(fieldItem.field) == -1) { %>
+        aria-describedby='variable-hint-<%=fieldItem.field.replace(/ /g, '-')%>'
+        <% }%>
+      >
+        <% if(allowedFields.indexOf(fieldItem.field) == -1) { %><h6><% } else { %><h5><% } %>
+          <span aria-hidden="true"><%=translations.t(fieldItem.label)%><i class="fa fa-chevron-down"></i></span>
+          <span class="sr-only">បង្ហាញប្រភេទរង៖ <%=translations.t(fieldItem.label)%></span>
+        <% if(allowedFields.indexOf(fieldItem.field) == -1) { %></h6><% } else { %></h5><% } %>
+      </button>
+      <div class="variable-options">
+        <fieldset>
+          <legend class="sr-only">ប្រភេទរង - <%=translations.t(fieldItem.field)%></legend>
+          <div>
+            <button data-type="select">ជ្រើសយកទាំងអស់</button>
+            <button data-type="clear">លុបចេញ​ទាំងអស់</button>
+          </div>
+          <% _.each(fieldItem.values, function(item) { %>
+            <label>
+              <input type="checkbox" <%=item.checked ? 'checked' : ''%> value="<%=item.value%>" data-field="<%=fieldItem.field%>" /><%=translations.t(item.value)%>
+            </label>
+          <% }); %>
+        </fieldset>
+      </div>
+
+      <% if(allowedFields.indexOf(fieldItem.field) == -1) { %>
+        <div class="variable-hint" id="variable-hint-<%=fieldItem.field.replace(/ /g, '-')%>">អាចប្រើបាននៅពេល '% field' ត្រូវបានជ្រើសរើស
+        </div>
+        <div class="no-data-hint" id="no-data-hint-<%=fieldItem.field.replace(/ /g, '-')%>">
+          មិនមានជំរើសទេដោយសារត្រងខាងលើ
+        </div>
+      <% }%>
+
+    </div>
+  <% }); %>
+</script>
+
+<script type="text/template" id="units_template">
+  
+    <h4>ឯកតារង្វាស់</h4>
+    <fieldset>
+      <legend class="sr-only">ឯកតារង្វាស់</legend>
+      <% _.each(units, function(unitsItem, index) { %>
+        <% var checked = (selectedUnit) ? (selectedUnit==unitsItem) : (index==0); %>
+        <label><input type="radio" name="unit" value="<%=unitsItem%>" tabindex=0 <%=checked ? 'checked' : ''%> /> <%=translations.t(unitsItem)%></label>
+      <% }); %>
+    </fieldset>
+  
+</script>
+
+<script type="text/template" id="series_template">
+  
+    <h4>ស៊េរី</h4>
+    <fieldset>
+      <legend class="sr-only">ស៊េរី</legend>
+      <% _.each(serieses, function(seriesItem, index) { %>
+        <% var checked = (selectedSeries) ? (selectedSeries==seriesItem) : (index==0); %>
+        <label><input type="radio" name="series" value="<%=seriesItem%>" tabindex=0 <%=checked ? 'checked' : ''%> /> <%=translations.t(seriesItem)%></label>
+      <% }); %>
+    </fieldset>
+  
+</script>
+
+<script>translations['indicator'] = {"annotation_2030_target":"គោលដៅ ២០៣០","announce_data_added":"តារាងនិងតារាងត្រូវបានធ្វើបច្ចុប្បន្នភាពដើម្បីបញ្ចូលទិន្នន័យ។","announce_data_not_available":"តារាងនិងតារាងបង្ហាញទិន្នន័យ។","announce_data_removed":"តារាងនិងតារាងត្រូវបានធ្វើបច្ចុប្បន្នភាពដើម្បីមិនរាប់បញ្ចូលទិន្នន័យ។","chart":"គំនូសតាង","chart_annotation":"ចំណារពន្យល់គំនូសតាង","clear_all":"លុបចេញ​ទាំងអស់","clear_selections":"ការជ្រើសរើសច្បាស់","data_keyboard_navigation":"ចុចបញ្ចូលដើម្បីរកចំណុចទិន្នន័យដោយប្រើព្រួញឆ្វេងនិងស្តាំ។","data_not_available":"ទិន្នន័យនេះមិនមានទេ។ សូមជ្រើសរើសទិន្នន័យជំនួសដើម្បីបង្ហាញ។","data_tabular_alternative":"សម្រាប់ជម្រើសទិន្នន័យថេបសូមមើលផ្ទាំងតារាង។","dataset_size_warning":"មានសំណុំទិន្នន័យច្រើនពេកដើម្បីបង្ហាញនៅលើតារាង។ មិនមែនទាំងអស់នឹងត្រូវបានបង្ហាញរហូតដល់អ្នកដកជម្រើសមួយចំនួនចេញ។","download_chart":"ទាញយកតារាង CSV","download_chart_image":"ទាញយករូបភាពគំនូសតាង","download_chart_image_title":"ទាញយកគំនូសតាងជារូបភាព","download_csv":"ទាញយកស៊ីអេសវី","download_csv_title":"ទាញយកជាស៊ីអេសអេស","download_geojson":"ទាញយក GeoJSON","download_geojson_title":"ទាញយកជា GeoJSON","download_headline":"ទាញយកចំណងជើងស៊ីអេសអេស","download_headline_title":"ទាញយកទិន្នន័យចំណងជើងជា CSV","download_source":"ទាញយកប្រភពស៊ីអេសអេស","download_source_sdmx":"ទាញយកប្រភព SDMX","download_source_sdmx_title":"ទាញយកទិន្នន័យប្រភពជា SDMX","download_source_title":"ទាញយកទិន្នន័យប្រភពជាស៊ីអេសអេស","download_table":"ទាញយកតារាង CSV","edit":"កែប្រែ","edit_configuration":"កែសម្រួលការកំណត់រចនាសម្ព័ន្ធ","edit_data":"កែទិន្នន័យ","edit_metadata":"កែសម្រួលទិន្នន័យមេតាតា","footnote":"លេខយោង","geographical_area":"តំបន់ភូមិសាស្ត្រ","global_metadata":"ទិន្នន័យមេតាសកល","global_metadata_blurb":"តារាងនេះផ្តល់ព័ត៌មានអំពីទិន្នន័យមេតាសម្រាប់សូចនាករអេសជីជីដែលបានកំណត់ដោយគណៈកម្មការស្ថិតិរបស់អង្គការសហប្រជាជាតិ។ [១០៨] ទិន្នន័យមេតាសកលពេញលេញ [១៨០] ត្រូវបានផ្គត់ផ្គង់ដោយផ្នែកស្ថិតិរបស់អង្គការសហប្រជាជាតិ។","legend_help":"ចុចលើតាងដើម្បីយកបន្ទាត់នីមួយៗចេញពីតារាង។","loading":"កំពុងតម្លើង","loading_map":"កំពុងផ្ទុកផែនទី","map":"ផែនទី","map_search":"ស្វែងរក","map_search_hide":"លាក់ការស្វែងរក","map_search_show":"បង្ហាញការស្វែងរក","map_year_slider":"រំកិលឆ្នាំ","national_metadata":"ម៉េតាទិន្នន័យថ្នាក់ជាតិ","national_metadata_blurb":"តារាងនេះផ្តល់ទិន្នន័យមេតាសម្រាប់សូចនាករជាក់ស្តែងដែលអាចរកបានពីស្ថិតិ% country_name ដែលនៅជិតសូចនាករ SDG សកលដែលត្រូវគ្នា។ សូមកត់សម្គាល់ថាទោះបីជាសូចនាករអេសជីជីសកលអាចប្រើបានយ៉ាងពេញលេញពីស្ថិតិស្ថិតិប្រទេស% តារាងនេះគួរតែត្រូវបានពិគ្រោះយោបល់សម្រាប់ព័ត៌មានស្តីពីវិធីសាស្រ្តជាតិនិងព័ត៌មានមេតាដាតាផ្សេងទៀតដែលទាក់ទងនឹងប្រទេស% ។","next":"សូចនាករបន្ទាប់","no_data_hint":"មិនមានជំរើសទេដោយសារត្រងខាងលើ","plot_legend_description":"រឿងព្រេងដីឡូត៍៖ បញ្ជីនៃបន្ទាត់ដែលមានក្នុងតារាង","previous":"សូចនាករមុន","select_all":"ជ្រើសយកទាំងអស់","series":"ស៊េរី","series_help":"ជ្រើសរើសប្រភេទចេញពីបញ្ជីខាងក្រោមដើម្បីមើលការបំបែកទិន្នន័យផ្សេងៗគ្នា។ ខ្លះនឹងមិនមានទេរហូតដល់ថ្នាក់ខ្ពស់ត្រូវបានជ្រើសរើស។","source":"ប្រភព","sources":"ប្រភព","status":"ស្ថានភាពសូចនាករ","sub_categories":"ប្រភេទរង","sub_categories_show":"បង្ហាញប្រភេទរង៖","table":"តារាង","table_column_sort":"ចុចដើម្បីតម្រៀបតាមជួរឈរនេះ","tags":"ស្លាក","unit":"ឯកតា","unit_of_measurement":"ឯកតារង្វាស់","units_type":"ប្រភេទឯកតា","variable_hint":"អាចប្រើបាននៅពេល '% field' ត្រូវបានជ្រើសរើស","view_indicator_list":"មើលបញ្ជីសូចនាករគោលដៅរបស់គោលដៅនេះ"};</script>
+
+<script>translations['data'] = null;</script>
+
+
+<div class="container">
+  
+<ol class="breadcrumb">
+  
+  <li><a href="/">ទំព័រដើម</a></li>
+  <li><a href="/goals">គោលដៅ</a></li>
+  
+  <li><a href="/1" title="បញ្ចប់ភាពក្រីក្រនៅគ្រប់ទម្រង់ទាំងអស់នៅគ្រប់ទីកន្លែង">គោលដៅ 1</a></li>
+  
+</ol>
+
+
+  
+</div>
+<div class="heading goal-banner indicator goal-1">
+  <div class="container">
+    <div class="row">
+      
+      <div class="col-xs-4 col-md-3 col-lg-2 goal-icon goal-tiles">
+        <a href="/1" title="មើលបញ្ជីសូចនាករគោលដៅរបស់គោលដៅនេះ">
+          <img src="/site/assets/img/goals/km/1.png" alt="គ្មានភាពក្រីក្រ - គោលដៅ 1" id="goal-1" class="goal-icon-image goal-icon-image-"/>
+        </a>
+      </div>
+      <div class="col-xs-8 col-md-9 col-lg-10 indicator-details">
+      
+        <div>
+          <h1>
+            
+            សូចនាករ 1.5.1
+            
+            <span class="lead-copy">ចំនួនអ្នកស្លាប់បាត់ខ្លួននិងអ្នកដែលរងផលប៉ះពាល់ដោយផ្ទាល់បានបង្កឡើងដោយគ្រោះមហន្តរាយក្នុងចំនួនប្រជាជន ១០០.០០០ នាក់</span>
+          </h1>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="main-content" class="container goal-1" role="main">
+  
+
+  
+
+  
+
+  
+
+
+  
+
+
+
+<div class="row"
+  id="indicatorData"
+  data-indicatorid='indicator_1-5-1'
+  data-id="1-5-1"
+  data-country="Cambodia"
+  data-charttitle="ចំនួនអ្នកស្លាប់បាត់ខ្លួននិងអ្នកដែលរងផលប៉ះពាល់ដោយផ្ទាល់បានបង្កឡើងដោយគ្រោះមហន្តរាយក្នុងចំនួនប្រជាជន ១០០.០០០ នាក់"
+  data-charttitles="null"
+  data-measurementunit=""
+  data-xaxislabel=""
+  data-showdata="false"
+  data-graphtype="line"
+  data-graphtypes="null"
+  data-geocoderegex=""
+  data-showmap=""
+  data-startvalues="null"
+  data-graphlimits="null"
+  data-stackeddisaggregation=""
+  data-graphannotations="null"
+  data-graphtargetlines="null"
+  data-graphseriesbreaks="null"
+  data-indicatordownloads="null"
+  data-dataschema="{&quot;fields&quot;:[{&quot;name&quot;:&quot;Value&quot;,&quot;type&quot;:&quot;number&quot;,&quot;title&quot;:&quot;Value&quot;},{&quot;name&quot;:&quot;Year&quot;,&quot;type&quot;:&quot;number&quot;,&quot;title&quot;:&quot;Year&quot;}]}"
+  data-compositebreakdownlabel=""
+  data-precision="null"
+>
+  
+  <div id="indicator-main" class="indicator-main col-md-12">
+  
+  <ul class="nav nav-tabs spacer medium" role="tablist">
+
+  <li role="presentation" class="nav-item active">
+  <a class="nav-link" data-toggle="tab" id="tab-national" href="#national" aria-controls="national" role="tab" data-on="click"
+data-event-category="Tab change"
+data-event-action="Change metadata view"
+data-event-label="Change to National Metadata tab"
+>ម៉េតាទិន្នន័យថ្នាក់ជាតិ</a>
+</li>
+
+<li role="presentation" class="nav-item">
+  <a class="nav-link" data-toggle="tab" id="tab-global" href="#global" aria-controls="global" role="tab" data-on="click"
+data-event-category="Tab change"
+data-event-action="Change metadata view"
+data-event-label="Change to Global Metadata tab"
+>ទិន្នន័យមេតាសកល</a>
+</li>
+
+<li role="presentation" class="nav-item">
+  <a class="nav-link" data-toggle="tab" id="tab-sources" href="#sources" aria-controls="sources" role="tab" data-on="click"
+data-event-category="Tab change"
+data-event-action="Change metadata view"
+data-event-label="Change to Sources tab"
+>ប្រភព</a>
+</li>
+
+
+  
+</ul>
+
+<div class="tab-content">
+  
+    <div role="tabpanel" class="tab-pane active" id="national">
+  <!-- National Metadata -->
+  <div >
+    <article>
+      <p>
+        
+        
+        តារាងនេះផ្តល់ទិន្នន័យមេតាសម្រាប់សូចនាករជាក់ស្តែងដែលអាចរកបានពីស្ថិតិ% country_name ដែលនៅជិតសូចនាករ SDG សកលដែលត្រូវគ្នា។ សូមកត់សម្គាល់ថាទោះបីជាសូចនាករអេសជីជីសកលអាចប្រើបានយ៉ាងពេញលេញពីស្ថិតិស្ថិតិប្រទេស% តារាងនេះគួរតែត្រូវបានពិគ្រោះយោបល់សម្រាប់ព័ត៌មានស្តីពីវិធីសាស្រ្តជាតិនិងព័ត៌មានមេតាដាតាផ្សេងទៀតដែលទាក់ទងនឹងប្រទេស% ។
+      </p>
+      <table class="table">
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+      
+        
+          
+      
+        
+      
+      
+      <tr>
+        <th scope="row">គោលដៅ </th>
+        <td>
+          
+            <p> គោលដៅទី១. បញ្ចប់ភាពក្រីក្រគ្រប់ទម្រង់នៅគ្រប់ទីកន្លែង</p>
+<p>’</p>
+
+          
+        </td>
+        </tr>
+        
+      
+  
+      
+        
+      
+      
+      <tr>
+        <th scope="row">គោលដៅ </th>
+        <td>
+          
+            <p> គោលដៅទី១.៥៖ នៅឆ្នាំ២០៣០ ការកសាងភាពស្ត្រេស៊ីរបស់ជនក្រីក្រ និងអ្នកដែលរងគ្រោះនិងអ្នកដែលរងគ្រោះ និងកាត់បន្ថយការប្រឈមមុខនិងភាពងាយរងគ្រោះរបស់ពួកគេ ចំពោះព្រឹត្តិការណ៍ដ៏ជ្រុល និយមដែលទាក់ទងនឹងអាកាសធាតុ និងភាពភ្ញាក់ផ្អើលសេដ្ឋកិច្ចសង្គម និងបរិស្ថានផ្សេងទៀត និងគ្រោះមហន្តរាយ</p>
+
+          
+        </td>
+        </tr>
+        
+      
+  
+      
+        
+      
+      
+      <tr>
+        <th scope="row">សូចនាករ </th>
+        <td>
+          
+            <p>១.៥.១៖ ចំនួនអ្នកស្លាប់ បាត់ខ្លួន និងបុគ្គលដែលរងផលប៉ះពាល់ដោយផ្ទាល់ ចាត់ទុកជាគ្រោះមហន្តរាយ ១០០.០នាក់</p>
+<p>’</p>
+
+          
+        </td>
+        </tr>
+        
+      
+  
+      
+        
+      
+      
+      <tr>
+        <th scope="row">ស៊េរី </th>
+        <td>
+          
+            <p> ចំនួនអ្នកស្លាប់ ដែល បណ្តាល មក ពី គ្រោះ មហន្ត រាយ </p>
+<p> ចំនួន មនុស្ស ដែល បាត់ ខ្លួន ដែល បណ្តាល មក ពី គ្រោះ មហន្ត រាយ និង [១០៧][១១១]១១]ចំនួនមនុស្សដែលរងផលប៉ះពាល់ដោយផ្ទាល់ ផលប៉ះពាល់ដល់គ្រោះមហន្តរាយ។ </p>
+
+          
+        </td>
+        </tr>
+        
+      
+  
+      
+        
+      
+      
+      <tr>
+        <th scope="row">ទិន្នន័យមេតាធ្វើបច្ចុប្បន្នភាព </th>
+        <td>
+          
+            <p> ខែតុលា 2020</p>
+
+          
+        </td>
+        </tr>
+        
+      
+  
+      
+        
+          
+      
+        
+          
+      
+        
+      
+      
+      <tr>
+        <th scope="row">អង្គការ </th>
+        <td>
+          
+            <p> គណៈកម្មាធិការជាតិគ្រប់គ្រងគ្រោះមហន្តរាយ (NCDM)</p>
+
+          
+        </td>
+        </tr>
+        
+      
+  
+      
+        
+      
+      
+      <tr>
+        <th scope="row">អ្នកទំនាក់ទំនង </th>
+        <td>
+          
+            <p> គណៈកម្មាធិការជាតិគ្រប់គ្រងគ្រោះមហន្តរាយ (NCDM)</p>
+
+          
+        </td>
+        </tr>
+        
+      
+  
+      
+        
+      
+      
+      <tr>
+        <th scope="row">ទាក់ទងអង្គភាពអង្គភាព </th>
+        <td>
+          
+            <p> នាយកដ្ឋានព័ត៌មាន និងទំនាក់ទំនង លេខាធិការដ្ឋានទូទៅនៃ NCDM </p>
+
+          
+        </td>
+        </tr>
+        
+      
+  
+      
+        
+          
+      
+        
+      
+      
+      <tr>
+        <th scope="row">ទូរស័ព្ទទំនាក់ទំនង </th>
+        <td>
+          
+            <p>+855 23 864 298 /23 882 045</p>
+
+          
+        </td>
+        </tr>
+        
+      
+  
+      
+        
+      
+      
+      <tr>
+        <th scope="row">ទំនាក់ទំនងអ៊ីមែល </th>
+        <td>
+          
+            <p> អាសយដ្ឋាន: ផ្លូវ 516, Toul Sangke Commune, Rusey Keo District, Phnom Penh, Cambodia</p>
+
+          
+        </td>
+        </tr>
+        
+      
+  
+      
+        
+      
+      
+      <tr>
+        <th scope="row">អ៊ីមែលទំនាក់ទំនង </th>
+        <td>
+          
+            <p>administration@ncdm.gov.kh</p>
+
+          
+        </td>
+        </tr>
+        
+      
+  
+      
+        
+          
+      
+        
+      
+      
+      <tr>
+        <th scope="row">និយមន័យនិងគំនិត </th>
+        <td>
+          
+            <p> ការ ចង្អុល បង្ហាញ នេះ វាស់ ស្មាន ថា ចំនួន មនុស្ស ដែល បាន ស្លាប់ បាន បាត់ ខ្លួន ឬ រង ផល ប៉ះ ពាល់ ដោយ ផ្ទាល់ ពី គ្រោះ មហន្ត រាយ ក្នុង ចំណោម ប្រជា ជន 100,000 នាក់ ។ </p>
+<p> <strong> មរណភាព ៖ [១៥៥] ចំនួន មនុស្ស ដែល បាន ស្លាប់ ក្នុង អំឡុង ពេល គ្រោះ មហន្ត រាយ នេះ ឬ ដោយ ផ្ទាល់ ក្រោយ មក ជា លទ្ធផល ផ្ទាល់ នៃ ព្រឹត្តិការណ៍ គ្រោះថ្នាក់ នេះ។ &lt;/p&gt; <p> <strong> បាត់ខ្លួន៖ [៣០០]ចំនួនមនុស្សដែលនៅទីណា គេមិនស្គាល់តាំងពីព្រឹត្តិការណ៍គ្រោះថ្នាក់។ វា[៣៨៨] [៣៩៧] រួម មាន មនុស្ស ដែល ត្រូវ បាន សន្មត ថា បាន ស្លាប់ ដែល គ្មាន ភស្តុតាង ខាង រាង កាយ ដូច ជា រូប កាយ ហើយ ដែល របាយការណ៍ ផ្លូវ ការ/ច្បាប់ ត្រូវ បាន ដាក់ ជូន អាជ្ញាធរ មាន សមត្ថកិច្ច។ &lt;/p&gt; <p> <strong> រង ផល ប៉ះពាល់ ដោយ ផ្ទាល់ ៖ [៦១៦] ចំនួន មនុស្ស ដែល រង របួស ជំងឺ ឬ ផល ប៉ះពាល់ សុខភាព ផ្សេងៗ ទៀត។ អ្នក ដែល ត្រូវ បាន ជម្លៀស ចេញ ផ្លាស់ ប្តូរ ប្តូរ ទី តាំង ឬ រង ការ ខូច ខាត ដោយ ផ្ទាល់ ទៅ លើ ជីវភាព របស់ ខ្លួន សេដ្ឋ កិច្ច សង្គម វប្បធម៌ និង បរិស្ថាន ។ ផល ប៉ះពាល់ ដោយ ប្រយោល គឺ មនុស្ស ដែល បាន ទទួល រង នូវ ផល វិបាក ក្រៅ ពី ឬ ក្រៅ ពី ផល ប៉ះ ពាល់ ដោយ ផ្ទាល់ តាម ពេល វេលា ដោយសារ តែ ការ រំខាន ឬ ការ ផ្លាស់ ប្តូរ សេដ្ឋ កិច្ច ហេដ្ឋារចនាសម្ព័ន្ធ សំខាន់ សេវា មូលដ្ឋាន ពាណិជ្ជ កម្ម ឬ ការងារ ឬ ផល វិបាក សង្គម សុខ ភាព និង ចិត្ត សាស្ត្រ ។ &lt;/p&gt; <p> <strong> Rationale and Interpretation:</strong></p><p>ក្របខ័ណ្ឌ ផ្ញើសារសម្រាប់កាត់បន្ថយហានិភ័យគ្រោះមហន្តរាយ 2015-2030 ត្រូវ បានអនុម័តដោយរដ្ឋសមាជិក UN នៅខែមីនា ឆ្នាំ២០១៥ ជាគោលនយោបាយសកលមួយនៃកាត់បន្ថយហានិភ័យគ្រោះមហន្តរាយ។ ក្នុង ចំណោម គោល ដៅ ពិភព លោក " គោល ដៅ A : កាត់ បន្ថយ យ៉ាង ខ្លាំង នូវ មរណ ភាព គ្រោះ មហន្ត រាយ ពិភព លោក ត្រឹម ឆ្នាំ 2030 ក្នុង គោល បំណង កាត់ បន្ថយ មធ្យម ក្នុង មួយ 100,000 មរណ ភាព ពិភព លោក រវាង ឆ្នាំ 2020-2030 បើ ធៀប ទៅ នឹង ឆ្នាំ 2005-2015 " និង " គោល ដៅ B : កាត់ បន្ថយ យ៉ាង ខ្លាំង នូវ ចំនួន មនុស្ស ដែល រង ផល ប៉ះ ពាល់ ជា សកល ត្រឹម ឆ្នាំ 20030 ។ ក្នុង គោល បំណង កាត់ បន្ថយ តួ លេខ សកល ជា មធ្យម ក្នុង ១០០.០ រវាង ឆ្នាំ ២០២០-២០៣០ បើ ធៀប នឹង ឆ្នាំ ២០០៥-២០១៥" នឹង រួម ចំណែក ក្នុង ការ អភិវឌ្ឍ ប្រកបដោយ ចីរភាព និង ពង្រឹង ភាព រឹងមាំ ផ្នែក សេដ្ឋកិច្ច សង្គម សុខភាព និង បរិស្ថាន។ ទស្សនវិស័យ សេដ្ឋកិច្ច បរិស្ថាន និង សង្គម នឹង រួម មាន ការ លុប បំបាត់ ភាព ក្រីក្រ ភាព ប្រែប្រួល ទីក្រុង និង ការ សម្រប សម្រួល ការ ប្រែប្រួល អាកាសធាតុ។ </p> <p> ក្រុម ការងារ ជំនាញ អន្តរក្រសួង បើក ចំហ ស្តី ពី ការ ចង្អុល បង្ហាញ និង ពាក្យ វិទ្យា ទាក់ ទង នឹង ការ កាត់ បន្ថយ ហានិភ័យ គ្រោះ មហន្ត រាយ (OIEWG) ដែល បង្កើត ឡើង ដោយ សភា (resolution 69/284) បាន បង្កើត សំណុំ នៃ ការ ចង្អុល បង្ហាញ ដើម្បី វាស់ ស្ទង់ ការ រីក ចម្រើន ជា សកល ក្នុង ការ អនុវត្ត ក្របខ័ណ្ឌ សេនថាយ ដែល ត្រូវ បាន គាំទ្រ ដោយ UNGA (OIEWG <a href="http://www.preventionweb.net/publications/view/51748"> រាយ ការណ៍ A/71/644[25])។ ចង្អុល បង្ហាញ ជា សកល ដែល ពាក់ ព័ន្ធ សម្រាប់ គំរោង Sendai នឹង ត្រូវ បាន ប្រើ ដើម្បី រាយការណ៍ សម្រាប់ ការ ចង្អុល បង្ហាញ នេះ ។ &lt;/p&gt; <p> ទិន្នន័យ បាត់ បង់ គ្រោះ មហន្ត រាយ ត្រូវ បាន រង ឥទ្ធិ ពល យ៉ាង ខ្លាំង ដោយ ព្រឹត្តិ ការណ៍ គ្រោះ មហន្ត រាយ ក្នុង ទំហំ ធំ ដែល តំណាង ឲ្យ ការ ចេញ ដំណើរ ដ៏ សំខាន់ ។ UNISDR បាន ផ្តល់ អនុសាសន៍ ឲ្យ បណ្តា ប្រទេស រាយ ការណ៍ ទិន្នន័យ តាម ព្រឹត្តិ ការណ៍ ដូច្នេះ ការ វិភាគ បំពេញ បន្ថែម អាច ត្រូវ បាន ធ្វើ ឡើង ដើម្បី ទទួល បាន និន្នាការ និង លំនាំ ដែល ព្រឹត្តិ ការណ៍ គ្រោះ មហន្ត រាយ បែប នេះ ( ដែល អាច តំណាង ឲ្យ អ្នក លេច ចេញ ) អាច ត្រូវ បាន បញ្ចូល ឬ ដក ចេញ ។ </p>
+</a></p></strong></p></strong></p></strong></p>
+
+          
+        </td>
+        </tr>
+        
+      
+  
+      
+        
+      
+      
+      <tr>
+        <th scope="row">ឯកតារង្វាស់ </th>
+        <td>
+          
+            <p> ១០០.០០០នាក់</p>
+
+          
+        </td>
+        </tr>
+        
+      
+  
+      
+        
+          
+      
+        
+          
+      
+        
+      
+      
+      <tr>
+        <th scope="row">ប្រភពទិន្នន័យ </th>
+        <td>
+          
+            <p> ប្រព័ន្ធ ព័ត៌មាន ខូចខាត និង បាត់បង់ កម្ពុជា (CamDi) ៖ <a href="http://camdi.ncdm.gov.kh/DesInventar/profiletab.jsp">http://camdi.ncdm.gov.kh/DesInventar/profiletab.jsp</a></p>
+
+          
+        </td>
+        </tr>
+        
+      
+  
+      
+        
+      
+      
+      <tr>
+        <th scope="row">វិធីសាស្ត្រប្រមូលទិន្នន័យ </th>
+        <td>
+          
+            <p> NCDM ត្រូវ បាន អនុញ្ញាត ឲ្យ សហ ការ ជាមួយ ក្រសួង បន្ទាត់ និង អាជ្ញាធរ មូលដ្ឋាន ( ខេត្ត ស្រុក ស្រុក សហគមន៍ និង កម្រិត ភូមិ ) ក្នុង ការ ប្រមូល និង ផ្សព្វ ផ្សាយ ទិន្នន័យ ទាំង អស់ ទាក់ ទង នឹង គ្រោះ ថ្នាក់ គ្រោះ មហន្ត រាយ ។ </p>
+<p> អ្នកផ្តល់ទិន្នន័យនៅកម្រិតជាតិត្រូវបានតែងតាំងជាចំណុច Sendai Framework Focal Points។ ទិន្នន័យ គ្រោះ មហន្ត រាយ នៅ ប្រទេស ភាគ ច្រើន ត្រូវ បាន ប្រមូល ដោយ ក្រសួង បន្ទាត់ និង មូលដ្ឋាន ទិន្នន័យ បាត់ បង់ គ្រោះ មហន្ត រាយ ជាតិ ត្រូវ បាន បង្កើត ឡើង និង គ្រប់ គ្រង ដោយ ទី ភ្នាក់ងារ គោល បំណង ពិសេស រួម មាន ទី ភ្នាក់ងារ គ្រប់ គ្រង គ្រោះ មហន្ត រាយ ជាតិ ទី ភ្នាក់ងារ ការពារ ស៊ីវិល និង ទី ភ្នាក់ងារ ឧតុ និយម ។ The Sendai Framework Focal Points នៅ ក្នុង ប្រទេស នីមួយ ៗ ទទួល ខុស ត្រូវ លើ ការ រាយការណ៍ ទិន្នន័យ តាម រយៈ ប្រព័ន្ធ ត្រួត ពិនិត្យ ក្របខ័ណ្ឌ Sendai ។ </p>
+
+          
+        </td>
+        </tr>
+        
+      
+  
+      
+        
+      
+      
+      <tr>
+        <th scope="row">ប្រតិទិនប្រមូលទិន្នន័យ </th>
+        <td>
+          
+            <p> ប្រចាំឆ្នាំ</p>
+
+          
+        </td>
+        </tr>
+        
+      
+  
+      
+        
+      
+      
+      <tr>
+        <th scope="row">ប្រតិទិនចេញផ្សាយទិន្នន័យ </th>
+        <td>
+          
+            <p> ៣ ខែ ក្រោយ ពី រយៈ ពេល យោង</p>
+
+          
+        </td>
+        </tr>
+        
+      
+  
+      
+        
+      
+      
+      <tr>
+        <th scope="row">អ្នកផ្តល់ទិន្នន័យ </th>
+        <td>
+          
+            <p> គណៈកម្មាធិការជាតិគ្រប់គ្រងគ្រោះមហន្តរាយ (NCDM)</p>
+
+          
+        </td>
+        </tr>
+        
+      
+  
+      
+        
+      
+      
+      <tr>
+        <th scope="row">អ្នកចងក្រងទិន្នន័យ </th>
+        <td>
+          
+            <p> គណៈកម្មាធិការជាតិគ្រប់គ្រងគ្រោះមហន្តរាយ (NCDM)</p>
+
+          
+        </td>
+        </tr>
+        
+      
+  
+      
+        
+      
+      
+      <tr>
+        <th scope="row">អាណត្តិស្ថាប័ន </th>
+        <td>
+          
+            <p> NCDM គឺ ជា អង្គ ការ សម្រប សម្រួល សម្រាប់ សកម្ម ភាព ដែល ទាក់ ទង នឹង ការ គ្រប់ គ្រង គ្រោះ មហន្ត រាយ ទាំង អស់ បាន បង្កើត រចនា សម្ព័ន្ធ យន្ត ការ ដើម្បី ឆ្លើយ តប ទៅ នឹង គ្រោះ មហន្ត រាយ ពី ថ្នាក់ ជាតិ ទៅ កម្រិត មូលដ្ឋាន ។ វា ក៏ ត្រូវ បាន ទទួល ស្គាល់ ផង ដែរ ថា ជា ទី ភ្នាក់ងារ ចម្បង សម្រាប់ គ្រប់ គ្រង គ្រោះ អាសន្ន និង ការ កសាង ភាព ពឹង ផ្អែក លើ សហគមន៍ ទៅ នឹង គ្រោះ មហន្ត រាយ ធម្ម ជាតិ ។ អាណត្តិ សំខាន់ ផ្សេង ទៀត របស់ NCDM រួម មាន ការ អនុវត្ត យុទ្ធ សាស្ត្រ ទប់ ស្កាត់ និង កាត់ បន្ថយ ដើម្បី កាត់ បន្ថយ ផល ប៉ះ ពាល់ នៃ គ្រោះ មហន្ត រាយ ទៅ លើ ជីវិត ជីវភាព និង ហេដ្ឋារចនាសម្ព័ន្ធ ការ ចេញ និង ផ្តល់ អនុសាសន៍ គោល ការណ៍ ណែ នាំ និង គោល នយោបាយ សម្រាប់ ការ គាំទ្រ ថវិកា ផ្នែក នីតិ បញ្ញត្តិ សំរាប់ ការ គ្រប់ គ្រង គ្រោះ អាសន្ន និង គ្រោះ មហន្ត រាយ ។ ក្នុង នាម ជា អង្គ ការ សម្រប សម្រួល និង ផ្តល់ អនុសាសន៍ គោល ដៅ របស់ NDCM គឺ ដើម្បី បង្កើត ប្រព័ន្ធ ដែល មាន ប្រសិទ្ធិ ភាព មួយ សំរាប់ ការ ទប់ ស្កាត់ គ្រោះ មហន្ត រាយ ការ ឆ្លើយ តប គ្រោះ មហន្ត រាយ ដែល មាន ប្រសិទ្ធិ ភាព និង ការ ស្តារ ឡើង វិញ នូវ គ្រោះ មហន្ត រាយ យ៉ាង លឿន ។ </p>
+<p> តួនាទី និងការទទួលខុសត្រូវ:</p>
+<h1>គ្រប់គ្រងទិន្នន័យហានិភ័យគ្រោះមហន្តរាយ និងអភិវឌ្ឍរបាយការណ៍ពីស្ថានភាពគ្រោះមហន្តរាយ; </h1>
+<h1> សំណើ ស្តី ពី ការ បម្រុង ទុក ធនធាន សម្រាប់ ការ អន្តរាគមន៍ គ្រោះ មហន្ត រាយ ក្នុង ការ ឆ្លើយ តប សង្គ្រោះ បន្ទាន់ </h1>
+<h1> ការកសាងសមត្ថភាព និងការអភិវឌ្ឍធនធានមនុស្សលើការគ្រប់គ្រងគ្រោះមហន្តរាយ; </h1>
+<h1> សម្របសម្រួលការអនុវត្តគោលនយោបាយគ្រប់គ្រងគ្រោះមហន្តរាយ; </h1>
+<h1> ផ្លាស់ប្ដូរ និងចែករំលែកព័ត៌មាន; និង [១១៩៦][១២០១]សម្របសម្រួល និង ប្រមូលធនធានដើម្បីឆ្លើយតបនឹងគ្រោះមហន្តរាយ។ </h1>
+<ul> <li> NCDM ត្រូវ បាន ដឹក នាំ ដោយ នាយក រដ្ឋ មន្ត្រី ជា ប្រធាន ដែល មាន សមាជិក ភាព រួម មាន រដ្ឋ មន្ត្រី ស្ទើរ តែ ទាំង អស់ ព្រម ទាំង តំណាង មក ពី ការិយាល័យ រដ្ឋាភិបាល ផ្សេង ទៀត ។ លេខាធិការដ្ឋាន សម្របសម្រួល គ្រប់ សកម្មភាព និង បម្រើ ការងារ ជា ចំណុច ទាក់ទង សម្រាប់ កិច្ច ខិតខំ គ្រប់គ្រង គ្រោះ មហន្ត រាយ និង ព័ត៌មាន។ </li> </ul>
+
+          
+        </td>
+        </tr>
+        
+      
+  
+      
+        
+      
+      
+      <tr>
+        <th scope="row">ការពិចារណាលើវិធីសាស្រ្តផ្សេងទៀត </th>
+        <td>
+          
+            <p> NCDM ត្រូវ បាន អនុញ្ញាត ឲ្យ សហ ការ ជាមួយ ក្រសួង បន្ទាត់ និង អាជ្ញាធរ មូលដ្ឋាន ( ខេត្ត ស្រុក ស្រុក សហគមន៍ និង កម្រិត ភូមិ ) ក្នុង ការ ប្រមូល និង ផ្សព្វ ផ្សាយ ទិន្នន័យ ទាំង អស់ ទាក់ ទង នឹង គ្រោះ ថ្នាក់ គ្រោះ មហន្ត រាយ ។ </p>
+<p> អ្នកផ្តល់ទិន្នន័យនៅកម្រិតជាតិត្រូវបានតែងតាំងជាចំណុច Sendai Framework Focal Points។ ទិន្នន័យ គ្រោះ មហន្ត រាយ នៅ ប្រទេស ភាគ ច្រើន ត្រូវ បាន ប្រមូល ដោយ ក្រសួង បន្ទាត់ និង មូលដ្ឋាន ទិន្នន័យ បាត់ បង់ គ្រោះ មហន្ត រាយ ជាតិ ត្រូវ បាន បង្កើត ឡើង និង គ្រប់ គ្រង ដោយ ទី ភ្នាក់ងារ គោល បំណង ពិសេស រួម មាន ទី ភ្នាក់ងារ គ្រប់ គ្រង គ្រោះ មហន្ត រាយ ជាតិ ទី ភ្នាក់ងារ ការពារ ស៊ីវិល និង ទី ភ្នាក់ងារ ឧតុ និយម ។ The Sendai Framework Focal Points នៅ ក្នុង ប្រទេស នីមួយ ៗ ទទួល ខុស ត្រូវ លើ ការ រាយការណ៍ ទិន្នន័យ តាម រយៈ ប្រព័ន្ធ ត្រួត ពិនិត្យ ក្របខ័ណ្ឌ Sendai ។ </p>
+
+          
+        </td>
+        </tr>
+        
+      
+  
+      
+        
+      
+      
+      <tr>
+        <th scope="row">សនិទានភាព </th>
+        <td>
+          
+            <p> គំរោង បញ្ជូន ហានិភ័យ គ្រោះ មហន្ត រាយ ឆ្នាំ ២០១៥-២០៣០ ត្រូវ បាន អនុម័ត ដោយ រដ្ឋ ជា សមាជិក អង្គ ការ សហ ប្រជា ជាតិ នៅ ខែ មិនា ឆ្នាំ ២០១៥ ជា គោលនយោបាយ សកល មួយ នៃ ការ កាត់ បន្ថយ ហានិភ័យ គ្រោះ មហន្ត រាយ។ ក្នុង ចំណោម គោល ដៅ ពិភព លោក " គោល ដៅ A : កាត់ បន្ថយ យ៉ាង ខ្លាំង នូវ មរណ ភាព គ្រោះ មហន្ត រាយ ពិភព លោក ត្រឹម ឆ្នាំ 2030 ក្នុង គោល បំណង កាត់ បន្ថយ មធ្យម ក្នុង មួយ 100,000 មរណ ភាព ពិភព លោក រវាង ឆ្នាំ 2020-2030 បើ ធៀប ទៅ នឹង ឆ្នាំ 2005-2015 " និង " គោល ដៅ B : កាត់ បន្ថយ យ៉ាង ខ្លាំង នូវ ចំនួន មនុស្ស ដែល រង ផល ប៉ះ ពាល់ ជា សកល ត្រឹម ឆ្នាំ 20030 ។ ក្នុង គោល បំណង កាត់ បន្ថយ តួ លេខ សកល ជា មធ្យម ក្នុង ១០០.០ រវាង ឆ្នាំ ២០២០-២០៣០ បើ ធៀប នឹង ឆ្នាំ ២០០៥-២០១៥" នឹង រួម ចំណែក ក្នុង ការ អភិវឌ្ឍ ប្រកបដោយ ចីរភាព និង ពង្រឹង ភាព រឹងមាំ ផ្នែក សេដ្ឋកិច្ច សង្គម សុខភាព និង បរិស្ថាន។ ទស្សនវិស័យ សេដ្ឋកិច្ច បរិស្ថាន និង សង្គម នឹង រួម មាន ការ លុប បំបាត់ ភាព ក្រីក្រ ភាព ប្រែប្រួល ទីក្រុង និង ការ សម្រប សម្រួល ការ ប្រែប្រួល អាកាសធាតុ។ </p>
+<p> ក្រុម ការងារ ជំនាញ អន្តរក្រសួង បើក ចំហ ស្តី ពី ការ ចង្អុល បង្ហាញ និង ពាក្យ វិទ្យា ទាក់ ទង នឹង ការ កាត់ បន្ថយ ហានិភ័យ គ្រោះ មហន្ត រាយ (OIEWG) ដែល បង្កើត ឡើង ដោយ សភា (resolution 69/284) បាន បង្កើត សំណុំ នៃ ការ ចង្អុល បង្ហាញ ដើម្បី វាស់ ស្ទង់ ការ រីក ចម្រើន ជា សកល ក្នុង ការ អនុវត្ត ក្របខ័ណ្ឌ Sendai ដែល ត្រូវ បាន គាំទ្រ ដោយ UNGA (OIEWG <a href="http://www.preventionweb.net/publications/view/51748">report/71/644[18] ) ។ ចង្អុល បង្ហាញ ជា សកល ដែល ពាក់ ព័ន្ធ សម្រាប់ គំរោង Sendai នឹង ត្រូវ បាន ប្រើ ដើម្បី រាយការណ៍ សម្រាប់ ការ ចង្អុល បង្ហាញ នេះ ។ &lt;/p&gt; <p> ទិន្នន័យ បាត់ បង់ គ្រោះ មហន្ត រាយ ត្រូវ បាន រង ឥទ្ធិ ពល យ៉ាង ខ្លាំង ដោយ ព្រឹត្តិ ការណ៍ គ្រោះ មហន្ត រាយ ក្នុង ទំហំ ធំ ដែល តំណាង ឲ្យ ការ ចេញ ដំណើរ ដ៏ សំខាន់ ។ UNISDR បាន ផ្តល់ អនុសាសន៍ ឲ្យ បណ្តា ប្រទេស រាយ ការណ៍ ទិន្នន័យ តាម ព្រឹត្តិ ការណ៍ ដូច្នេះ ការ វិភាគ បំពេញ បន្ថែម អាច ត្រូវ បាន ធ្វើ ឡើង ដើម្បី ទទួល បាន និន្នាការ និង លំនាំ ដែល ព្រឹត្តិ ការណ៍ គ្រោះ មហន្ត រាយ បែប នេះ ( ដែល អាច តំណាង ឲ្យ អ្នក លេច ចេញ ) អាច ត្រូវ បាន បញ្ចូល ឬ ដក ចេញ ។ </p>
+</a></p>
+
+          
+        </td>
+        </tr>
+        
+      
+  
+      
+        
+      
+      
+      <tr>
+        <th scope="row">យោបល់និងដែនកំណត់ </th>
+        <td>
+          
+            <p> ប្រព័ន្ធ ត្រួត ពិនិត្យ ក្របខ័ណ្ឌ Sendai ត្រូវ បាន បង្កើត ឡើង ដើម្បី វាស់ ស្ទង់ ការ រីក ចម្រើន ក្នុង ការ អនុវត្ត ក្របខ័ណ្ឌ Sendai ដោយ UNGA បាន គាំទ្រ ការ ចង្អុល បង្ហាញ ។ </p>
+<p> <em> Proxy, ជម្រើស និង ការចង្អុលបង្ហាញបន្ថែម:</em></p>
+<p>]<p>] ក្នុងករណីភាគច្រើន ប្រភពទិន្នន័យអន្តរជាតិមានតែព្រឹត្តិការណ៍កត់ត្រាដែល លើសពីការប៉ះពាល់មួយចំនួន និងប្រើប្រភពទិន្នន័យទី២ ដែលជាធម្មតាគ្មានឯកសណ្ឋាន ឬសូម្បីតែវិធីសាស្ត្រមិនប្រែប្រួល ដែលផលិតទិន្នន័យ heterogeneous ។ </p>
+</p>
+
+          
+        </td>
+        </tr>
+        
+      
+  
+      
+        
+      
+      
+      <tr>
+        <th scope="row">វិធីនៃការគណនា </th>
+        <td>
+          
+            <p> ចង្អុលបង្ហាញត្រូវបានគណនាជារូបមន្តខាងក្រោម<sup>*</sup>:</p>
+<p><img alt="Mathematical formula" src="data:image/png;base64,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" /></p>
+<p>ទីកន្លែងណា:</p>
+<p>A<sub>2 </sub> ចំនួនអ្នកស្លាប់ដែលចាត់ទុកជាវិបត្តិ; </p>
+<p> A<sub>3</sub> ចំនួនមនុស្សបាត់ខ្លួន ចាត់ទុកជាវិបត្តិ; និង [៤៩០៩][៤៩១៣]ប[៤៩១៧]១[៤៩២៣] ចំនួនមនុស្សដែលរងផលប៉ះពាល់ដោយផ្ទាល់ ប៉ះពាល់ដល់គ្រោះមហន្តរាយ។ </p>
+<p>* វិធីសាស្ត្រលម្អិតអាចរកបាននៅក្នុងការណែនាំបច្ចេកទេស (សូមមើលខាងក្រោមផ្នែកយោង)៖</p>
+<p><a href="https://www.preventionweb.net/files/54970_collectionoftechnicalguidancenoteso.pdf">https://www.preventionweb.net/files/54970_collectionoftechnicalguidancenoteso.pdf</a></p>
+
+          
+        </td>
+        </tr>
+        
+      
+  
+      
+        
+          
+      
+        
+          
+      
+        
+          
+      
+        
+          
+      
+        
+          
+      
+        
+      
+      
+      <tr>
+        <th scope="row">ភាពអាចរកបាននិងការបែងចែកទិន្នន័យ </th>
+        <td>
+          
+            <p> ទិន្នន័យ ដែល មាន ដោយ ការ រួម ភេទ អាយុ ការ ខូច ខាត ប្រភេទ/ការ បាត់ បង់ ដោយ ទីតាំង ភូមិសាស្រ្ត៖ ទីក្រុង/ជនបទ និង តាម បណ្តា ខេត្ត។ </p>
+
+          
+        </td>
+        </tr>
+        
+      
+  
+      
+        
+      
+      
+      <tr>
+        <th scope="row">ភាពប្រៀបធៀប / គម្លាតពីស្តង់ដារអន្តរជាតិ </th>
+        <td>
+          
+            <p> មិន មាន[១៦]
+</p>
+
+          
+        </td>
+        </tr>
+        
+      
+  
+      
+        
+      
+      
+      <tr>
+        <th scope="row">ឯកសារយោងនិងឯកសារ </th>
+        <td>
+          
+            <p> ប្រព័ន្ធ ព័ត៌មាន ខូចខាត និង បាត់បង់ កម្ពុជា (CamDi) ៖ <a href="http://camdi.ncdm.gov.kh/DesInventar/profiletab.jsp">http://camdi.ncdm.gov.kh/DesInventar/profiletab.jsp</a></p>
+
+          
+        </td>
+        </tr>
+        
+      
+  
+      
+        
+          
+      
+        
+          
+      
+        
+          
+      
+        
+          
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+</table>
+
+    </article>
+  </div>
+</div>
+<div role="tabpanel" class="tab-pane" id="global">
+  <!-- Global Metadata -->
+  <div>
+    <article>
+      <p>តារាងនេះផ្តល់ព័ត៌មានអំពីទិន្នន័យមេតាសម្រាប់សូចនាករអេសជីជីដែលបានកំណត់ដោយគណៈកម្មការស្ថិតិរបស់អង្គការសហប្រជាជាតិ។ [១០៨] ទិន្នន័យមេតាសកលពេញលេញ [១៨០] ត្រូវបានផ្គត់ផ្គង់ដោយផ្នែកស្ថិតិរបស់អង្គការសហប្រជាជាតិ។</p>
+      <table class="table">
+  
+      
+        
+          
+      
+        
+          
+      
+        
+          
+      
+        
+          
+      
+        
+          
+      
+        
+          
+      
+        
+          
+      
+        
+          
+      
+        
+          
+      
+        
+          
+      
+        
+          
+      
+        
+          
+      
+        
+          
+      
+        
+          
+      
+        
+          
+      
+        
+          
+      
+        
+          
+      
+        
+          
+      
+        
+          
+      
+        
+          
+      
+        
+          
+      
+        
+          
+      
+        
+          
+      
+        
+          
+      
+        
+          
+      
+        
+          
+      
+        
+          
+      
+        
+          
+      
+        
+          
+      
+        
+          
+      
+        
+          
+      
+        
+          
+      
+        
+          
+      
+        
+          
+      
+        
+          
+      
+        
+          
+      
+        
+          
+      
+        
+          
+      
+        
+          
+      
+        
+          
+      
+        
+          
+      
+        
+          
+      
+        
+          
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+</table>
+
+    </article>
+  </div>
+</div>
+<div role="tabpanel" class="tab-pane" id="sources">
+  <!-- Count the non-empty sources (up to 5) -->
+
+
+
+
+
+</div>
+
+  
+  
+</div>
+
+
+  </div>
+</div>
+
+</div>
+
+
+<footer role="contentinfo">
+  <div class="container">
+    <div class="row">
+      <div class="col-xs-12">
+        <div id="footerLinks">
+          <ul>
+            <li><a href="https://open-sdg.org">បង្កើតឡើងដោយប្រើអេសភីអេសជី</a></li>
+            
+              <li>
+                
+                  <a href="mailto:my-email-address@example.com" target="_blank">ទាក់ទង​មក​ពួក​យើង</a>
+                
+                </li>
+              <li>
+                
+                  <a href="https://twitter.com/MyTwitterAccount" target="_blank">Twitter</a>
+                
+                </li>
+              <li>
+                
+                  <a href="https://facebook.com/MyFacebookAccount" target="_blank">ហ្វេសប៊ុក</a>
+                
+                </li>
+              <li>
+                <a href="/about/cookies-and-privacy/">ឃុកឃី</a>
+                
+                </li>
+              
+            
+            </ul>
+        </div>
+      </div>
+    </div>
+    
+  </div>
+</footer>
+
+<script src="https://code.jquery.com/jquery-3.4.1.min.js" integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous"></script>
+
+<script src="//maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+<script src="//cdn.datatables.net/1.10.16/js/jquery.dataTables.min.js"></script>
+<script src="//cdn.datatables.net/1.10.16/js/dataTables.bootstrap.min.js"></script>
+
+<script src="//cdn.datatables.net/fixedcolumns/3.2.3/js/dataTables.fixedColumns.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.20/lodash.min.js" integrity="sha512-90vH1Z83AJY9DmlWa8WkjkV79yfS2n2Oxhsi2dZbIv0nC4E6m5AbH8Nh156kkM7JePmqD6tcZsfad1ueoaovww==" crossorigin="anonymous"></script>
+
+<script src="//cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.3/Chart.bundle.min.js"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/patternomaly@1.3.2/dist/patternomaly.js"></script>
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/autotrack/2.4.1/autotrack.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.0.0-rc.3/dist/html2canvas.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.2/dist/FileSaver.min.js"></script>
+
+
+
+
+
+
+
+<script>translations['general'] = translations['general'] || {};
+    translations['general']['hide'] = 'លាក់';</script>
+
+<script>translations['search'] = translations['search'] || {};
+    translations['search']['search'] = 'ស្វែងរក';</script>
+
+<script src='/assets/js/sdg.js?v=20220801012725'></script>
+
+
+    
+    
+    <script src="/assets/js/custom.js?v=20220801012725"></script><script>
+    new indicatorInit();
+    new accessibilitySwitcher();
+</script>
+
+
+</body>
+</html>
+
